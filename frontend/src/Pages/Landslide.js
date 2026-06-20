@@ -118,7 +118,9 @@ function Landslide() {
     let cancelled = false;
     const checkUploads = async () => {
       try {
-        const res = await fetch("/api/uploads?hazardType=landslide");
+        const res = await fetch(
+          "/api/uploads?hazardType=landslide&status=approved",
+        );
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
         if (!cancelled) {

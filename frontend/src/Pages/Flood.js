@@ -110,7 +110,9 @@ function Flood() {
     let cancelled = false;
     const checkUploads = async () => {
       try {
-        const res = await fetch("/api/uploads?hazardType=flood");
+        const res = await fetch(
+          "/api/uploads?hazardType=flood&status=approved",
+        );
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
         if (!cancelled) {

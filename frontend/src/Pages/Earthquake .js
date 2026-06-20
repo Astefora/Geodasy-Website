@@ -202,7 +202,9 @@ function Earthquake() {
     let cancelled = false;
     const checkUploads = async () => {
       try {
-        const res = await fetch("/api/uploads?hazardType=earthquake");
+        const res = await fetch(
+          "/api/uploads?hazardType=earthquake&status=approved",
+        );
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
         if (!cancelled) setHasLocalUploads(data.length > 0);

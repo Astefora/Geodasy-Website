@@ -442,7 +442,7 @@ function Fire() {
     let cancelled = false;
     const checkUploads = async () => {
       try {
-        const res = await fetch("/api/uploads?hazardType=fire");
+        const res = await fetch("/api/uploads?hazardType=fire&status=approved");
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
         if (!cancelled) {

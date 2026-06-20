@@ -188,7 +188,9 @@ function Drought() {
     let cancelled = false;
     const checkUploads = async () => {
       try {
-        const res = await fetch("/api/uploads?hazardType=drought");
+        const res = await fetch(
+          "/api/uploads?hazardType=drought&status=approved",
+        );
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
         if (!cancelled) {
