@@ -1,0 +1,396 @@
+/* ─── Theme CSS Variables ──────────────────────────────────────────────────── */
+
+body[data-theme="dark"] {
+  --bg-primary: #000;
+  --bg-secondary: #111;
+  --bg-card: #1a1a1a;
+  --bg-card-alt: #222;
+  --bg-input: #111;
+  --border-color: #333;
+  --border-light: #222;
+  --text-primary: #fff;
+  --text-secondary: #ccc;
+  --text-muted: #888;
+  --accent-blue: #00aaff;
+  --accent-orange: #f28c28;
+  --accent-brand: #1f4fd8;
+  --header-bg: #000;
+  --header-border: #222;
+  --shadow: rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+body[data-theme="light"] {
+  --bg-primary: #f0f2f5;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-alt: #f8f9fa;
+  --bg-input: #ffffff;
+  --border-color: #d0d0d0;
+  --border-light: #e0e0e0;
+  --text-primary: #1a1a1a;
+  --text-secondary: #333;
+  --text-muted: #666;
+  --accent-blue: #0077cc;
+  --accent-orange: #d97706;
+  --accent-brand: #1f4fd8;
+  --header-bg: #ffffff;
+  --header-border: #e0e0e0;
+  --shadow: rgba(0, 0, 0, 0.06);
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary);
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   LIGHT MODE GLOBAL OVERRIDES
+   React inline styles use hardcoded dark colors. CSS cannot target inline
+   style values reliably. Instead we use broad element selectors with
+   !important to force light colors on ALL elements when in light mode.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── ALL div backgrounds → light ──────────────────────────────────────────── */
+body[data-theme="light"] div {
+  background-color: transparent;
+}
+
+/* Specific dark backgrounds that pages use inline → override to light */
+body[data-theme="light"] [style] {
+  --force-bg: initial;
+}
+
+/* The root app wrapper and page containers */
+body[data-theme="light"] #root {
+  background-color: var(--bg-primary);
+}
+
+body[data-theme="light"] #root > div > div {
+  background-color: var(--bg-primary) !important;
+}
+
+/* ── Text: force all text readable in light mode ──────────────────────────── */
+body[data-theme="light"] * {
+  color: inherit;
+}
+
+body[data-theme="light"] {
+  color: #1a1a1a;
+}
+
+body[data-theme="light"] h1,
+body[data-theme="light"] h2,
+body[data-theme="light"] h3,
+body[data-theme="light"] h4,
+body[data-theme="light"] h5,
+body[data-theme="light"] h6 {
+  color: var(--accent-blue) !important;
+}
+
+body[data-theme="light"] p {
+  color: #444 !important;
+}
+
+body[data-theme="light"] span {
+  color: inherit;
+}
+
+body[data-theme="light"] strong {
+  color: inherit;
+}
+
+body[data-theme="light"] label {
+  color: #555 !important;
+}
+
+/* ── Inputs ───────────────────────────────────────────────────────────────── */
+body[data-theme="light"] input,
+body[data-theme="light"] select,
+body[data-theme="light"] textarea {
+  background-color: #fff !important;
+  color: #333 !important;
+  border-color: #ccc !important;
+}
+
+/* ── Links ────────────────────────────────────────────────────────────────── */
+body[data-theme="light"] a {
+  color: var(--accent-brand) !important;
+}
+
+body[data-theme="light"] .site-nav a {
+  color: var(--text-primary) !important;
+}
+
+/* ── Buttons — keep colored button text white ─────────────────────────────── */
+body[data-theme="light"] button {
+  color: inherit;
+}
+body[data-theme="light"] .csv-btn {
+  color: #fff !important;
+}
+
+/* ── Leaflet ──────────────────────────────────────────────────────────────── */
+body[data-theme="light"] .leaflet-popup-content-wrapper {
+  background: #fff;
+  color: #333;
+}
+body[data-theme="light"] .leaflet-popup-tip {
+  background: #fff;
+}
+body[data-theme="light"] .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #666 !important;
+}
+
+/* Tooltip — force white bg + dark text in both themes so the broad * rules can't override */
+body[data-theme="light"] .leaflet-tooltip,
+body[data-theme="dark"] .leaflet-tooltip {
+  background-color: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #bbb !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+}
+
+body[data-theme="light"] .leaflet-tooltip::before,
+body[data-theme="dark"] .leaflet-tooltip::before {
+  border-top-color: #bbb !important;
+}
+
+body[data-theme="light"] .leaflet-tooltip *,
+body[data-theme="dark"] .leaflet-tooltip * {
+  color: inherit !important;
+  background-color: transparent !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PAGE-SPECIFIC LIGHT MODE OVERRIDES
+   These target the specific page structures used in this project.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Hazard pages: main wrapper (backgroundColor: "#111") ─────────────────── */
+body[data-theme="light"] div[style*="background-color"] {
+  background-color: var(--bg-primary) !important;
+}
+
+/* ── Cards (backgroundColor: "#222", "#1a1a1a", "#0b0b0b") ───────────────── */
+body[data-theme="light"]
+  div[style*="background-color"][style*="border-radius"] {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-light) !important;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+
+/* ── Dashboard/Research specific backgrounds ──────────────────────────────── */
+body[data-theme="light"] div[style*="background: rgb(17, 17, 17)"],
+body[data-theme="light"] div[style*="background: rgb(11, 11, 11)"],
+body[data-theme="light"] div[style*="background: rgb(13, 13, 13)"] {
+  background: var(--bg-card-alt) !important;
+}
+
+/* ── Auth pages (.auth-container, .auth-box) ──────────────────────────────── */
+body[data-theme="light"] .auth-container {
+  background-color: var(--bg-primary) !important;
+}
+body[data-theme="light"] .auth-box {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-light) !important;
+}
+
+/* ── Admin panel ──────────────────────────────────────────────────────────── */
+body[data-theme="light"] .admin-container {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+body[data-theme="light"] .user-card,
+body[data-theme="light"] .upload-card {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-light) !important;
+}
+
+/* ── Home page (backgroundColor: "#000") ──────────────────────────────────── */
+body[data-theme="light"] div[style*="background-color: rgb(0, 0, 0)"] {
+  background-color: var(--bg-primary) !important;
+}
+
+/* ── Gradient buttons — keep text white ───────────────────────────────────── */
+body[data-theme="light"] button[style*="linear-gradient"] {
+  color: #fff !important;
+}
+
+/* ── Research topic buttons ───────────────────────────────────────────────── */
+body[data-theme="light"] button[style*="border: 1px solid"] {
+  color: #333 !important;
+}
+body[data-theme="light"] button[style*="border: 1px solid rgb(242, 140, 40)"] {
+  color: #d97706 !important;
+  background-color: #fff8f0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ADDITIONAL LIGHT MODE FIXES
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Home page: Research Portal button (white text on blue bg → keep white) ── */
+body[data-theme="light"] a[style*="background-color: rgb(31, 79, 216)"],
+body[data-theme="light"] a[style*="background-color:#1f4fd8"],
+body[data-theme="light"] [style*="background-color: rgb(31, 79, 216)"] {
+  color: #fff !important;
+}
+
+/* ── Research portal: unselected topic buttons (color: "#aaa" on dark bg) ──── */
+body[data-theme="light"] button[style*="background: rgb(17, 17, 17)"],
+body[data-theme="light"] button[style*="background-color: rgb(17, 17, 17)"] {
+  background-color: #f0f2f5 !important;
+  color: #333 !important;
+  border-color: #d0d0d0 !important;
+}
+
+/* Selected topic button */
+body[data-theme="light"] button[style*="border: 1px solid rgb(242, 140, 40)"] {
+  background-color: #fff8f0 !important;
+  color: #b45309 !important;
+  border-color: #d97706 !important;
+}
+
+/* ── Hazard pages: "No local data" text and LocalDisasterData content ──────── */
+body[data-theme="light"] div[style*="text-align: center"] p,
+body[data-theme="light"] div[style*="textAlign: center"] p {
+  color: #555 !important;
+}
+
+/* ── Dashboard: disaster type selector cards (bg: "#0d0d0d") ──────────────── */
+body[data-theme="light"] button[style*="background: rgb(13, 13, 13)"],
+body[data-theme="light"] button[style*="background-color: rgb(13, 13, 13)"] {
+  background-color: #f5f7fa !important;
+  color: #555 !important;
+  border-color: #d0d0d0 !important;
+}
+
+/* Dashboard: selected disaster card */
+body[data-theme="light"] button[style*="box-shadow"] {
+  color: #333 !important;
+}
+
+/* ── Dashboard: card panels (background: "#111", border: "1px solid #1f4fd8") */
+body[data-theme="light"] div[style*="background: rgb(17, 17, 17)"] {
+  background: #ffffff !important;
+  border-color: #d0d0d0 !important;
+}
+
+body[data-theme="light"] div[style*="background: rgb(11, 11, 11)"] {
+  background: #f8f9fa !important;
+}
+
+body[data-theme="light"] div[style*="background: rgb(13, 13, 13)"] {
+  background: #f5f7fa !important;
+}
+
+/* ── Dashboard: Submit/gradient buttons — keep text white ─────────────────── */
+body[data-theme="light"] button[style*="linear-gradient"],
+body[data-theme="light"] button[style*="background: linear-gradient"] {
+  color: #fff !important;
+}
+
+/* ── Dashboard: form inputs with dark bg ──────────────────────────────────── */
+body[data-theme="light"] input[style*="background: rgb(17, 17, 17)"],
+body[data-theme="light"] input[style*="background-color: rgb(17, 17, 17)"],
+body[data-theme="light"] select[style*="background: rgb(17, 17, 17)"],
+body[data-theme="light"] textarea[style*="background: rgb(17, 17, 17)"] {
+  background: #fff !important;
+  color: #333 !important;
+  border-color: #ccc !important;
+}
+
+/* ── Dashboard: drag-drop file area ───────────────────────────────────────── */
+body[data-theme="light"] div[style*="border"][style*="dashed"] {
+  background-color: #fafbfc !important;
+  border-color: #1f4fd8 !important;
+}
+
+/* ── Dashboard: history items ─────────────────────────────────────────────── */
+body[data-theme="light"]
+  div[style*="background: rgb(13, 13, 13)"][style*="border-radius"] {
+  background: #f5f7fa !important;
+  border-color: #e0e0e0 !important;
+}
+
+/* ── All colored accent buttons should keep white text ────────────────────── */
+body[data-theme="light"] button[style*="background: rgb(255,"],
+body[data-theme="light"] button[style*="background-color: rgb(67, 160, 71)"],
+body[data-theme="light"] .approve-btn,
+body[data-theme="light"] .auth-btn {
+  color: #fff !important;
+}
+
+/* ── Fix: any remaining white/light text that's invisible ─────────────────── */
+body[data-theme="light"] [style*="color: rgb(255, 255, 255)"] {
+  color: #1a1a1a !important;
+}
+body[data-theme="light"] [style*="color: white"] {
+  color: #1a1a1a !important;
+}
+body[data-theme="light"] [style*="color: rgb(170, 170, 170)"] {
+  color: #666 !important;
+}
+body[data-theme="light"] [style*="color: rgb(136, 136, 136)"] {
+  color: #666 !important;
+}
+body[data-theme="light"] [style*="color: rgb(204, 204, 204)"] {
+  color: #444 !important;
+}
+body[data-theme="light"] [style*="color: rgb(119, 119, 119)"] {
+  color: #555 !important;
+}
+body[data-theme="light"] [style*="color: rgb(85, 85, 85)"] {
+  color: #666 !important;
+}
+
+/* ── Exception: keep white text on colored/dark backgrounds ───────────────── */
+body[data-theme="light"] [style*="background-color: rgb(31, 79, 216)"] *,
+body[data-theme="light"] [style*="background: linear-gradient"] *,
+body[data-theme="light"] [style*="background: rgb(46, 125, 50)"] * {
+  color: #fff !important;
+}
+
+/* ── Dashboard: disabled submit button (background: "#333") ───────────────── */
+body[data-theme="light"] button[style*="background: rgb(51, 51, 51)"],
+body[data-theme="light"] button[style*="background-color: rgb(51, 51, 51)"] {
+  background: #d0d0d0 !important;
+  color: #888 !important;
+}
+
+/* ── Dashboard: active submit button with gradient — ensure visible ────────── */
+body[data-theme="light"] button[style*="not-allowed"] {
+  background: #d0d0d0 !important;
+  color: #888 !important;
+}
+
+/* ── Login/Register page: dark gradient background → light ────────────────── */
+body[data-theme="light"] .auth-container {
+  background: linear-gradient(135deg, #e8ecf0 0%, #f5f7fa 100%) !important;
+}
+
+body[data-theme="light"] .auth-box {
+  background: #fff !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid #e0e0e0;
+}
+
+body[data-theme="light"] .auth-btn {
+  background: linear-gradient(135deg, #3949ab 0%, #1f4fd8 100%) !important;
+  color: #fff !important;
+}
+
+/* Demo account box on login page */
+body[data-theme="light"] div[style*="background: rgb(26, 26, 46)"],
+body[data-theme="light"] div[style*="background-color: rgb(26, 26, 46)"] {
+  background: #eef2ff !important;
+  border-color: #1f4fd8 !important;
+}

@@ -1,0 +1,331 @@
+.admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.admin-info h1 {
+  color: #1a237e;
+  margin: 0;
+}
+
+.admin-info p {
+  color: #666;
+  margin: 5px 0 0 0;
+}
+
+.logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background: #c82333;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+  border-radius: 5px;
+  transition: all 0.3s;
+}
+
+.tab-btn:hover {
+  background: #f5f5f5;
+}
+
+.tab-btn.active {
+  background: #1a237e;
+  color: white;
+  font-weight: 600;
+}
+
+.admin-content {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-style: italic;
+}
+
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.user-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 20px;
+  background: #f8f9fa;
+}
+
+.user-info h3 {
+  color: #1a237e;
+  margin-top: 0;
+}
+
+.user-detail {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.user-detail strong {
+  color: #333;
+}
+
+.user-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.approve-btn,
+.reject-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.approve-btn {
+  background: #28a745;
+  color: white;
+}
+
+.approve-btn:hover {
+  background: #218838;
+}
+
+.reject-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.reject-btn:hover {
+  background: #c82333;
+}
+
+.approve-btn:disabled,
+.reject-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.all-uploads {
+  margin-top: 20px;
+}
+
+.uploads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.upload-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 15px;
+  background: #f8f9fa;
+}
+
+.upload-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.upload-topic {
+  background: #3949ab;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.upload-date {
+  color: #666;
+  font-size: 12px;
+}
+
+.upload-file {
+  font-weight: 600;
+  margin: 5px 0;
+  word-break: break-all;
+}
+
+.upload-status {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.upload-status.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.upload-status.approved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.upload-status.rejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.uploader {
+  color: #666;
+  font-size: 12px;
+  margin: 5px 0;
+}
+
+.upload-desc {
+  color: #555;
+  font-size: 13px;
+  margin: 10px 0 0 0;
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES FOR ADMIN PANEL
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+body[data-theme="dark"] .admin-container {
+  color: #fff;
+}
+
+body[data-theme="dark"] .admin-header {
+  border-bottom-color: #333;
+}
+
+body[data-theme="dark"] .admin-info h1 {
+  color: #00aaff;
+}
+
+body[data-theme="dark"] .admin-info p {
+  color: #aaa;
+}
+
+body[data-theme="dark"] .admin-tabs {
+  border-bottom-color: #333;
+}
+
+body[data-theme="dark"] .tab-btn {
+  color: #aaa;
+}
+
+body[data-theme="dark"] .tab-btn:hover {
+  background: #222;
+}
+
+body[data-theme="dark"] .tab-btn.active {
+  background: #1f4fd8;
+  color: #fff;
+}
+
+body[data-theme="dark"] .admin-content {
+  background: #111;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+body[data-theme="dark"] .no-data {
+  color: #888;
+}
+
+body[data-theme="dark"] .user-card,
+body[data-theme="dark"] .upload-card {
+  background: #1a1a1a;
+  border-color: #333;
+}
+
+body[data-theme="dark"] .user-info h3 {
+  color: #00aaff;
+}
+
+body[data-theme="dark"] .user-detail {
+  color: #ccc;
+}
+
+body[data-theme="dark"] .user-detail strong {
+  color: #fff;
+}
+
+body[data-theme="dark"] .upload-file {
+  color: #fff;
+}
+
+body[data-theme="dark"] .uploader {
+  color: #888;
+}
+
+body[data-theme="dark"] .upload-desc {
+  color: #aaa;
+}
+
+body[data-theme="dark"] .upload-date {
+  color: #888;
+}
+
+body[data-theme="dark"] .upload-status.pending {
+  background: #3a2d08;
+  color: #ffd666;
+}
+
+body[data-theme="dark"] .upload-status.approved {
+  background: #12351d;
+  color: #7ee59a;
+}
+
+body[data-theme="dark"] .upload-status.rejected {
+  background: #3a1117;
+  color: #ff8a9a;
+}
+
+body[data-theme="dark"] h2 {
+  color: #00aaff;
+}
