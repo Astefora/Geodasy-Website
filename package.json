@@ -1,0 +1,18 @@
+{
+  "name": "ethiopia-disaster-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "client": "cd frontend && npm start",
+    "server": "cd backend && npm start",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "build": "cd frontend && npm run build",
+    "test": "cd frontend && npm test",
+    "install-client": "cd frontend && npm install",
+    "install-server": "cd backend && npm install",
+    "install-all": "npm run install-client && npm run install-server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
