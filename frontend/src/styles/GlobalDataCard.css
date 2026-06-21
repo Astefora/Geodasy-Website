@@ -174,3 +174,30 @@ body[data-theme="light"] h4 {
   color: #888888 !important;
   border-color: #444444 !important;
 }
+
+/* ─── Map type toggle buttons — readable in both themes ───────────────────── */
+.map-type-btn {
+  padding: 5px 10px;
+  borderradius: 4px;
+  border: 1px solid #444;
+  fontsize: 12px;
+  fontweight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* inactive button: light bg + dark text in light mode */
+body[data-theme="light"] .map-type-btn-inactive {
+  background: #e8ecf2 !important;
+  color: #333 !important;
+  border-color: #bbb !important;
+}
+
+/* active button stays blue with dark text */
+body[data-theme="light"] .map-type-btn-active {
+  background: #00aaff !important;
+  color: #000 !important;
+  border-color: #00aaff !important;
+}
+
+/* dark mode stays as-is — these rules don't apply */

@@ -76,9 +76,22 @@ function LocalDisasterData({ disasterType }) {
 
   return (
     <div style={{ textAlign: "left" }}>
+      {/* Persistent title — always visible */}
+      <div
+        style={{
+          color: "#00aaff",
+          fontWeight: "bold",
+          fontSize: "18px",
+          textAlign: "center",
+          padding: "6px 16px 8px",
+        }}
+      >
+        Local {disasterType} Data
+      </div>
+
       {uploads.length === 0 ? (
         <p style={{ color: "#888", marginBottom: 0 }}>
-          No local {disasterType.toLowerCase()} data has been uploaded yet.
+          No approved local {disasterType.toLowerCase()} data yet.
         </p>
       ) : (
         <div style={{ display: "grid", gap: "12px" }}>
@@ -108,9 +121,6 @@ function LocalDisasterData({ disasterType }) {
                       flexWrap: "wrap",
                     }}
                   >
-                    <strong style={{ color: "#fff", fontSize: "14px" }}>
-                      Local {disasterType} Data
-                    </strong>
                     <span style={{ color: "#aaa", fontSize: "11px" }}>
                       {dateStr}
                     </span>
