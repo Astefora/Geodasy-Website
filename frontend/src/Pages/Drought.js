@@ -188,7 +188,9 @@ function Drought() {
     let cancelled = false;
     const checkUploads = async () => {
       try {
-        const res = await fetch("/api/uploads?hazardType=drought");
+        const res = await fetch(
+          "/api/uploads?hazardType=drought&status=approved",
+        );
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
         if (!cancelled) {
@@ -271,7 +273,7 @@ function Drought() {
                 >
                   <MapContainer
                     center={[9.145, 40.489673]}
-                    zoom={6}
+                    zoom={5}
                     style={{
                       height: "100%",
                       width: "100%",
@@ -320,7 +322,7 @@ function Drought() {
             <div style={{ flex: 1, minHeight: "340px", position: "relative" }}>
               <MapContainer
                 center={[9.145, 40.489673]}
-                zoom={6}
+                zoom={5}
                 style={{ height: "100%", width: "100%", minHeight: "340px" }}
               >
                 <CreatePane name="droughtOverlayPane" zIndex={450} />

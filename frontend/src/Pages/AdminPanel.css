@@ -47,7 +47,7 @@
 }
 
 .tab-btn {
-  background: none;
+  background: #000;
   border: none;
   padding: 12px 24px;
   cursor: pointer;
@@ -58,7 +58,7 @@
 }
 
 .tab-btn:hover {
-  background: #f5f5f5;
+  background: #9a9898;
 }
 
 .tab-btn.active {

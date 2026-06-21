@@ -64,7 +64,9 @@ function MapTypeToggle({ mapType, setMapType }) {
             borderRadius: "4px",
             border: "1px solid #444",
             background: mapType === key ? "#00aaff" : "#222",
-            color: mapType === key ? "#000" : "#aaa",
+            // color: mapType === key ? "var(--text-primary)" : "#f6f5f5ff",
+
+            // color: "#f6f5f5ff",
             fontSize: "12px",
             fontWeight: "600",
             cursor: "pointer",
@@ -367,7 +369,9 @@ function Volcano() {
     let cancelled = false;
     const checkUploads = async () => {
       try {
-        const res = await fetch("/api/uploads?hazardType=volcano");
+        const res = await fetch(
+          "/api/uploads?hazardType=volcano&status=approved",
+        );
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
         if (!cancelled) setHasLocalUploads(data.length > 0);
@@ -482,7 +486,7 @@ function Volcano() {
                 >
                   <MapContainer
                     center={[9.145, 40.489673]}
-                    zoom={6}
+                    zoom={5}
                     style={{
                       height: "100%",
                       width: "100%",
@@ -598,7 +602,7 @@ function Volcano() {
             <div style={{ flex: 1, minHeight: "340px", position: "relative" }}>
               <MapContainer
                 center={[9.145, 40.489673]}
-                zoom={6}
+                zoom={5}
                 style={{ height: "100%", width: "100%", minHeight: "340px" }}
               >
                 <TileLayer
