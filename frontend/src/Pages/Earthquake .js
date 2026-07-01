@@ -202,7 +202,9 @@ function Earthquake() {
     let cancelled = false;
     const checkUploads = async () => {
       try {
-        const res = await fetch("/api/uploads?hazardType=earthquake");
+        const res = await fetch(
+          "/api/uploads?hazardType=earthquake&status=approved",
+        );
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
         if (!cancelled) setHasLocalUploads(data.length > 0);
@@ -303,7 +305,7 @@ function Earthquake() {
                 >
                   <MapContainer
                     center={[9.145, 40.489673]}
-                    zoom={6}
+                    zoom={5}
                     style={{
                       height: "100%",
                       width: "100%",
@@ -433,7 +435,7 @@ function Earthquake() {
             <div style={{ flex: 1, minHeight: "340px", position: "relative" }}>
               <MapContainer
                 center={[9.145, 40.489673]}
-                zoom={6}
+                zoom={5}
                 style={{ height: "100%", width: "100%", minHeight: "340px" }}
               >
                 <TileLayer
