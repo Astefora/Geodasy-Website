@@ -671,6 +671,137 @@ app.get("/api/comet-volcanoes", (_req, res) => {
   });
 });
 
+// GET /api/comet-page-proxy -> Bypasses X-Frame-Options SAMEORIGIN for COMET portal S1_analysis pages
+function fetchCometPage(targetUrl, clientRes) {
+  const request = https.get(
+    new URL(targetUrl),
+    {
+      headers: {
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+    },
+    (cometRes) => {
+      if (
+        (cometRes.statusCode === 301 || cometRes.statusCode === 302) &&
+        cometRes.headers.location
+      ) {
+        let redirectUrl = cometRes.headers.location;
+        if (redirectUrl.startsWith("/")) {
+          redirectUrl = `https://comet.nerc.ac.uk${redirectUrl}`;
+        } else if (!redirectUrl.startsWith("http://") && !redirectUrl.startsWith("https://")) {
+          redirectUrl = `https://comet.nerc.ac.uk/${redirectUrl}`;
+        }
+        console.log(`[server] HTML proxy redirecting to: ${redirectUrl}`);
+        return fetchCometPage(redirectUrl, clientRes);
+      }
+
+      // Buffer the response content to replace hardcoded domains with our proxy endpoint to bypass CORS
+      let chunks = [];
+      cometRes.on("data", (chunk) => {
+        chunks.push(chunk);
+      });
+
+      cometRes.on("end", () => {
+        const contentType = cometRes.headers["content-type"] || "";
+        if (contentType.includes("text/html")) {
+          let html = Buffer.concat(chunks).toString("utf8");
+          // Replace comet-volcanodb.org with our proxy route
+          html = html.replace(/https:\/\/comet-volcanodb\.org/g, "/api/comet-db-proxy");
+
+          // Copy headers but omit those that block iframe rendering
+          Object.keys(cometRes.headers).forEach((key) => {
+            const lowerKey = key.toLowerCase();
+            if (
+              lowerKey !== "x-frame-options" &&
+              lowerKey !== "content-security-policy" &&
+              lowerKey !== "cross-origin-opener-policy" &&
+              lowerKey !== "cross-origin-resource-policy" &&
+              lowerKey !== "cross-origin-embedder-policy" &&
+              lowerKey !== "content-length" // Omit since body length has changed
+            ) {
+              clientRes.setHeader(key, cometRes.headers[key]);
+            }
+          });
+          clientRes.setHeader("Access-Control-Allow-Origin", "*");
+          clientRes.status(cometRes.statusCode).send(html);
+        } else {
+          // Omit frame blocking headers for non-HTML as well
+          Object.keys(cometRes.headers).forEach((key) => {
+            const lowerKey = key.toLowerCase();
+            if (
+              lowerKey !== "x-frame-options" &&
+              lowerKey !== "content-security-policy" &&
+              lowerKey !== "cross-origin-opener-policy" &&
+              lowerKey !== "cross-origin-resource-policy" &&
+              lowerKey !== "cross-origin-embedder-policy"
+            ) {
+              clientRes.setHeader(key, cometRes.headers[key]);
+            }
+          });
+          clientRes.setHeader("Access-Control-Allow-Origin", "*");
+          clientRes.status(cometRes.statusCode).send(Buffer.concat(chunks));
+        }
+      });
+    }
+  );
+
+  request.on("error", (err) => {
+    console.log(`[server] HTML proxy error: ${err.message}`);
+    clientRes.status(502).json({ error: "Proxy request failed", detail: err.message });
+  });
+
+  request.setTimeout(20000, () => {
+    request.destroy();
+    clientRes.status(504).json({ error: "Proxy timeout" });
+  });
+}
+
+app.get("/api/comet-page-proxy", (req, res) => {
+  const targetUrl = req.query.url;
+  if (!targetUrl || !targetUrl.startsWith("https://comet.nerc.ac.uk/")) {
+    return res.status(400).json({ error: "Invalid target URL" });
+  }
+  console.log(`[server] COMET page proxy → ${targetUrl}`);
+  fetchCometPage(targetUrl, res);
+});
+
+// Proxy for comet-volcanodb.org assets to bypass CORS blocks
+app.get("/api/comet-db-proxy/*", (req, res) => {
+  const targetPath = req.params[0] || "";
+  const targetUrl = `https://comet-volcanodb.org/${targetPath}${req.url.includes("?") ? req.url.substring(req.url.indexOf("?")) : ""}`;
+
+  console.log(`[server] COMET DB proxy → ${targetUrl}`);
+
+  const request = https.get(
+    targetUrl,
+    {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+    },
+    (cometRes) => {
+      // Copy headers but allow CORS
+      Object.keys(cometRes.headers).forEach((key) => {
+        res.setHeader(key, cometRes.headers[key]);
+      });
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.status(cometRes.statusCode);
+      cometRes.pipe(res);
+    }
+  );
+
+  request.on("error", (err) => {
+    console.log(`[server] COMET DB proxy error: ${err.message}`);
+    res.status(502).json({ error: "Proxy request failed", detail: err.message });
+  });
+
+  request.setTimeout(20000, () => {
+    request.destroy();
+    res.status(504).json({ error: "Proxy timeout" });
+  });
+});
+
 // ── Serve built frontend in production ────────────────────────────────────
 const CLIENT_BUILD_DIR = path.join(__dirname, "../frontend/build");
 if (fs.existsSync(CLIENT_BUILD_DIR)) {

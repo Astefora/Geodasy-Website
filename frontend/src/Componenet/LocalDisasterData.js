@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import ImageModal from "./ImageModal";
 
-function LocalDisasterData({ disasterType }) {
+/**
+ * Renders metadata for the most recent approved upload for a hazard type.
+ * Does NOT render a title (title lives in the parent card header).
+ * Does NOT render the image inline — returns image src via onImageReady callback
+ * so the parent can render it in the fill area.
+ */
+function LocalDisasterData({ disasterType, onUploadReady }) {
   const [uploads, setUploads] = useState([]);
   const [modalImage, setModalImage] = useState({
     isOpen: false,
@@ -12,8 +18,7 @@ function LocalDisasterData({ disasterType }) {
 
   useEffect(() => {
     let cancelled = false;
-
-    const loadFromBackend = async () => {
+    const load = async () => {
       try {
         const res = await fetch(
           `/api/uploads?hazardType=${disasterType.toLowerCase()}&status=approved`,
@@ -21,7 +26,9 @@ function LocalDisasterData({ disasterType }) {
         if (!res.ok) throw new Error("Backend unavailable");
         const data = await res.json();
         if (cancelled) return;
-        setUploads(data.slice(0, 1));
+        const slice = data.slice(0, 1);
+        setUploads(slice);
+        if (onUploadReady) onUploadReady(slice[0] || null);
       } catch {
         if (cancelled) return;
         const saved = JSON.parse(
@@ -32,30 +39,28 @@ function LocalDisasterData({ disasterType }) {
             (u) => u.disasterType === disasterType && u.status === "approved",
           )
           .sort((a, b) => (b.id || 0) - (a.id || 0));
-        setUploads(matching.slice(0, 1));
+        const slice = matching.slice(0, 1);
+        setUploads(slice);
+        if (onUploadReady) onUploadReady(slice[0] || null);
       }
     };
-
-    loadFromBackend();
-    const handleFocus = () => loadFromBackend();
-    window.addEventListener("focus", handleFocus);
-    const pollId = setInterval(loadFromBackend, 8000);
-
+    load();
+    window.addEventListener("focus", load);
+    const pollId = setInterval(load, 8000);
     return () => {
       cancelled = true;
-      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("focus", load);
       clearInterval(pollId);
     };
-  }, [disasterType]);
+  }, [disasterType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openModal = (src, alt) => setModalImage({ isOpen: true, src, alt });
   const closeModal = () => setModalImage({ isOpen: false, src: "", alt: "" });
 
-  const getImageSrc = (upload) => {
-    if (upload.path && upload.fileType?.startsWith("image/"))
-      return upload.path;
-    if (upload.fileData) return upload.fileData;
-    return null;
+  const getDate = (upload) => {
+    if (!upload.date) return "";
+    const d = new Date(upload.date);
+    return isNaN(d.getTime()) ? upload.date : d.toLocaleString();
   };
 
   const getLink = (upload) => {
@@ -66,135 +71,94 @@ function LocalDisasterData({ disasterType }) {
     return null;
   };
 
-  const getDate = (upload) => {
-    if (upload.date) {
-      const d = new Date(upload.date);
-      return isNaN(d.getTime()) ? upload.date : d.toLocaleString();
-    }
-    return "";
-  };
+  if (uploads.length === 0) {
+    return (
+      <p style={{ color: "#888", margin: 0, fontSize: "13px" }}>
+        No approved local {disasterType.toLowerCase()} data yet.
+      </p>
+    );
+  }
+
+  const upload = uploads[0];
+  const dateStr = getDate(upload);
+  const link = getLink(upload);
+  const isImage = upload.fileType?.startsWith("image/");
 
   return (
-    <div style={{ textAlign: "left" }}>
-      {uploads.length === 0 ? (
-        <p style={{ color: "#888", marginBottom: 0 }}>
-          No local {disasterType.toLowerCase()} data has been uploaded yet.
+    <div style={{ fontSize: "13px" }}>
+      {/* Metadata row */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "4px",
+          marginBottom: "6px",
+        }}
+      >
+        <span style={{ color: "#ccc", fontWeight: "600" }}>
+          {upload.title || upload.fileName}
+        </span>
+        {dateStr && (
+          <span style={{ color: "#aaa", fontSize: "11px" }}>{dateStr}</span>
+        )}
+      </div>
+
+      {/* File info */}
+      {upload.fileName && (
+        <p style={{ color: "#ccc", margin: "0 0 4px" }}>
+          <strong style={{ color: "#00aaff" }}>
+            {isImage ? "Image" : "File"}:
+          </strong>{" "}
+          {upload.fileName}
+          {upload.path && !isImage && (
+            <a
+              href={upload.path}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "#8ab4ff", marginLeft: "8px", fontSize: "11px" }}
+            >
+              [View]
+            </a>
+          )}
         </p>
-      ) : (
-        <div style={{ display: "grid", gap: "12px" }}>
-          {uploads.map((upload) => {
-            const imgSrc = getImageSrc(upload);
-            const link = getLink(upload);
-            const dateStr = getDate(upload);
+      )}
 
-            return (
-              <div
-                key={upload._id || upload.id}
-                style={{
-                  backgroundColor: "#111",
-                  border: "1px solid #333",
-                  borderRadius: "8px",
-                  overflow: "hidden",
-                }}
-              >
-                {/* ── Description/metadata on TOP (matches Global Data layout) ── */}
-                <div style={{ padding: "12px 12px 8px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: "8px",
-                      marginBottom: "6px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <strong style={{ color: "#fff", fontSize: "14px" }}>
-                      Local {disasterType} Data
-                    </strong>
-                    <span style={{ color: "#aaa", fontSize: "11px" }}>
-                      {dateStr}
-                    </span>
-                  </div>
-                  {upload.fileName && (
-                    <p
-                      style={{
-                        color: "#ccc",
-                        margin: "0 0 4px",
-                        fontSize: "13px",
-                      }}
-                    >
-                      <strong style={{ color: "#00aaff" }}>
-                        {upload.fileType?.startsWith("image/")
-                          ? "Image"
-                          : "File"}
-                        :
-                      </strong>{" "}
-                      {upload.fileName}
-                      {upload.path &&
-                        !upload.fileType?.startsWith("image/") && (
-                          <a
-                            href={upload.path}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                              color: "#8ab4ff",
-                              marginLeft: "8px",
-                              fontSize: "11px",
-                            }}
-                          >
-                            [View]
-                          </a>
-                        )}
-                    </p>
-                  )}
-                  <p style={{ color: "#777", margin: 0, fontSize: "11px" }}>
-                    Uploaded by: {upload.uploadedBy || "LEO member"}
-                  </p>
-                </div>
+      {/* Uploader */}
+      <p style={{ color: "#777", margin: 0, fontSize: "11px" }}>
+        Uploaded by: {upload.uploadedBy || "LEO member"}
+      </p>
 
-                {/* ── Image/content BELOW the description ── */}
-                {imgSrc && (
-                  <img
-                    src={imgSrc}
-                    alt={upload.fileName || `${disasterType} upload`}
-                    onClick={() =>
-                      openModal(
-                        imgSrc,
-                        upload.fileName || `${disasterType} upload`,
-                      )
-                    }
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      height: "auto",
-                      objectFit: "contain",
-                      backgroundColor: "#000",
-                      cursor: "pointer",
-                    }}
-                  />
-                )}
-
-                {link && (
-                  <div style={{ padding: "8px 12px 12px" }}>
-                    <a
-                      href={link}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        color: "#8ab4ff",
-                        fontSize: "12px",
-                        wordBreak: "break-word",
-                      }}
-                    >
-                      {link}
-                    </a>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+      {/* Link type */}
+      {link && (
+        <div style={{ marginTop: "8px" }}>
+          <a
+            href={link}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              color: "#8ab4ff",
+              fontSize: "12px",
+              wordBreak: "break-word",
+            }}
+          >
+            {link}
+          </a>
         </div>
       )}
+
+      {/* Image — rendered inline for modal only; fill display is handled by parent */}
+      {isImage && upload.path && (
+        <div style={{ marginTop: "8px" }}>
+          <span
+            style={{ color: "#8ab4ff", fontSize: "11px", cursor: "pointer" }}
+            onClick={() => openModal(upload.path, upload.fileName)}
+          >
+            🔍 Click map area to enlarge
+          </span>
+        </div>
+      )}
+
       <ImageModal
         isOpen={modalImage.isOpen}
         imageSrc={modalImage.src}
@@ -206,3 +170,101 @@ function LocalDisasterData({ disasterType }) {
 }
 
 export default LocalDisasterData;
+
+/**
+ * Fills its container with the approved uploaded image (or file link) for a hazard.
+ * Used as the fill area when hasLocalUploads is true.
+ */
+export function UploadedImageFill({ disasterType }) {
+  const [upload, setUpload] = useState(null);
+  const [modalImage, setModalImage] = useState({
+    isOpen: false,
+    src: "",
+    alt: "",
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch(
+          `/api/uploads?hazardType=${disasterType.toLowerCase()}&status=approved`,
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data[0]) setUpload(data[0]);
+      } catch {
+        /* silent */
+      }
+    };
+    load();
+    const pollId = setInterval(load, 8000);
+    return () => {
+      cancelled = true;
+      clearInterval(pollId);
+    };
+  }, [disasterType]);
+
+  if (!upload) return null;
+
+  const isImage = upload.fileType?.startsWith("image/");
+  const src = upload.path;
+
+  if (isImage && src) {
+    return (
+      <>
+        <img
+          src={src}
+          alt={upload.fileName || disasterType}
+          onClick={() =>
+            setModalImage({ isOpen: true, src, alt: upload.fileName })
+          }
+          style={{
+            display: "block",
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            cursor: "zoom-in",
+          }}
+        />
+        <ImageModal
+          isOpen={modalImage.isOpen}
+          imageSrc={modalImage.src}
+          altText={modalImage.alt}
+          onClose={() => setModalImage({ isOpen: false, src: "", alt: "" })}
+        />
+      </>
+    );
+  }
+
+  // Non-image file — show centered link
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        padding: "20px",
+        textAlign: "center",
+      }}
+    >
+      <div>
+        <div style={{ fontSize: "40px", marginBottom: "12px" }}>📄</div>
+        <div style={{ color: "#ccc", marginBottom: "8px", fontSize: "14px" }}>
+          {upload.fileName}
+        </div>
+        {src && (
+          <a
+            href={src}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "#8ab4ff", fontSize: "13px" }}
+          >
+            Open file ↗
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}

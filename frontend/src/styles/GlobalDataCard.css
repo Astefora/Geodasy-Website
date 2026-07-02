@@ -170,3 +170,123 @@ body[data-theme="light"] h4 {
   color: #888888 !important;
   border-color: #444444 !important;
 }
+
+/* ─── Map type toggle buttons ─────────────────────────────────────────────── */
+/* Inactive */
+.map-toggle-btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #222;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.map-toggle-btn.active {
+  background: #00aaff;
+  color: #000;
+  border-color: #00aaff;
+}
+
+/* Light mode overrides */
+body[data-theme="light"] .map-toggle-btn {
+  background: #e8ecf2 !important;
+  color: #333 !important;
+  border-color: #bbb !important;
+}
+
+body[data-theme="light"] .map-toggle-btn.active {
+  background: #00aaff !important;
+  color: #000 !important;
+  border-color: #0088cc !important;
+}
+
+/* ─── Orbit direction and Frame buttons ───────────────────────────────────── */
+.orbit-btn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid #444 !important;
+  background: #111 !important;
+  color: #777 !important;
+}
+
+.orbit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border: 1px solid #333 !important;
+  color: #444 !important;
+}
+
+.orbit-btn.active.ascending {
+  border-color: #4caf50 !important;
+  background: #1a3a20 !important;
+  color: #4caf50 !important;
+}
+
+.orbit-btn.active.descending {
+  border-color: #ff8800 !important;
+  background: #3a2000 !important;
+  color: #ff8800 !important;
+}
+
+.frame-btn {
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: monospace;
+  transition: all 0.15s;
+  border: 1px solid #333 !important;
+  background: #111 !important;
+  color: #666 !important;
+}
+
+.frame-btn.active {
+  border: 1px solid #00aaff !important;
+  background: #0a1a2a !important;
+  color: #00aaff !important;
+}
+
+/* Light mode overrides */
+body[data-theme="light"] .orbit-btn {
+  background: #f0f2f5 !important;
+  color: #555 !important;
+  border-color: #d0d0d0 !important;
+}
+
+body[data-theme="light"] .orbit-btn:disabled {
+  background: #e4e6eb !important;
+  color: #b0b3b8 !important;
+  border-color: #e4e6eb !important;
+}
+
+body[data-theme="light"] .orbit-btn.active.ascending {
+  background: #e8f5e9 !important;
+  color: #2e7d32 !important;
+  border-color: #4caf50 !important;
+}
+
+body[data-theme="light"] .orbit-btn.active.descending {
+  background: #fff3e0 !important;
+  color: #e65100 !important;
+  border-color: #ff8800 !important;
+}
+
+body[data-theme="light"] .frame-btn {
+  background: #f0f2f5 !important;
+  color: #555 !important;
+  border-color: #d0d0d0 !important;
+}
+
+body[data-theme="light"] .frame-btn.active {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #00aaff !important;
+}

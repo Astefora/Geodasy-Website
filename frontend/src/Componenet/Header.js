@@ -62,7 +62,7 @@ function Header() {
             fontWeight: "600",
           }}
         >
-          Geodesy & Geodynamics LE
+          Disaster Monitoring Center
         </h2>
       </div>
 
@@ -122,7 +122,7 @@ function Header() {
               cursor: "pointer",
             }}
           >
-            Near Real-Time Hazard Monitoring ▼
+            Near Real-Time Hazards ▼
           </span>
           {hazardOpen && (
             <div
@@ -185,6 +185,24 @@ function Header() {
         >
           Research
         </span>
+
+        <a
+          href="https://disaster.ssgi.gov.et/"
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            color: "#f28c28",
+            textDecoration: "none",
+            fontSize: "14px",
+            fontWeight: "600",
+            border: "1px solid #f28c28",
+            padding: "4px 10px",
+            borderRadius: "6px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          National Geoportal ↗
+        </a>
       </nav>
     </header>
   );

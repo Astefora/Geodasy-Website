@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { CircleMarker, MapContainer, TileLayer, Tooltip } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "../styles/GlobalDataCard.css";
-import LocalDisasterData from "../Componenet/LocalDisasterData";
+import LocalDisasterData, {
+  UploadedImageFill,
+} from "../Componenet/LocalDisasterData";
 import EthiopiaMask from "../Componenet/EthiopiaMask";
 
 const MAP_TYPES = {
@@ -59,17 +61,7 @@ function MapTypeToggle({ mapType, setMapType }) {
           key={key}
           onClick={() => setMapType(key)}
           title={type.description}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "4px",
-            border: "1px solid #444",
-            background: mapType === key ? "#00aaff" : "#222",
-            color: mapType === key ? "#000" : "#aaa",
-            fontSize: "12px",
-            fontWeight: "600",
-            cursor: "pointer",
-            transition: "all 0.2s",
-          }}
+          className={`map-toggle-btn${mapType === key ? " active" : ""}`}
         >
           {type.label}
         </button>
@@ -92,14 +84,76 @@ function markerColor(v) {
   return "#aaaaaa";
 }
 
+// ── Parse Sentinel-1 frames from image filenames ──────────────────────────
+// filename: volcanoname_TTTOD_NNNNN_XXXXXX.jpg  TTT=track, O=A/D, NNNNN=frame
+function parseFrames(images) {
+  const frames = { ascending: [], descending: [] };
+  if (!images) return frames;
+  images.forEach((img) => {
+    const match = img.filename.match(/(\d{3})(A|D)_(\d{5})_?(\d{6})?/);
+    if (match) {
+      const track = match[1];
+      const orbit = match[2];
+      const dir = orbit === "A" ? "ascending" : "descending";
+      const frame = match[3];
+      const suffix = match[4] || "131313";
+      const frameCode = `${track}${orbit}_${frame}_${suffix}`;
+      if (!frames[dir].find((f) => f.frameCode === frameCode)) {
+        frames[dir].push({
+          track,
+          frame,
+          frameCode,
+          url: img.url,
+          filename: img.filename,
+        });
+      }
+    }
+  });
+  return frames;
+}
+
+function cometTimeSeriesUrl(v) {
+  const region =
+    v.location?.[0]?.name?.replace(/ /g, "%20") || "Africa%20and%20Red%20Sea";
+  const country = (v.country || "Ethiopia")
+    .split("/")[0]
+    .trim()
+    .replace(/ /g, "%20");
+  const slug = v.name.replace(/ /g, "%20");
+  return `https://comet.nerc.ac.uk/comet-volcano-portal/volcano-index/${region}/${country}/${slug}/S1_analysis`;
+}
+
+// Bypasses React dev server (port 3000) intercepting Accept: text/html requests in development
+const getProxyUrl = (targetUrl) => {
+  const path = `/api/comet-page-proxy?url=${encodeURIComponent(targetUrl)}`;
+  if (window.location.port === "3000") {
+    return `http://localhost:5002${path}`;
+  }
+  return path;
+};
+
 // ── Click detail panel — uses CSS classes so theme overrides can't break it ─
 function DetailPanel({ v, onClose }) {
+  // Hooks must be unconditional — call before any early return
+  const frames = parseFrames(v?.images);
+  const defaultDir = frames.ascending.length > 0 ? "ascending" : "descending";
+  const [orbitDir, setOrbitDir] = useState(defaultDir);
+  const [selectedFrame, setSelectedFrame] = useState(
+    frames[defaultDir][0] || null,
+  );
+
   if (!v) return null;
+
   const color = markerColor(v);
   const hasDeformation = v.deformation_observation === "Yes";
   const hasMeasurements = v.geodetic_measurements === "Yes";
   const description = stripHtml(v.characteristics_of_deformation);
-  const firstImage = v.images && v.images[0];
+  const hasFrames = frames.ascending.length > 0 || frames.descending.length > 0;
+
+  const handleOrbitChange = (dir) => {
+    setOrbitDir(dir);
+    setSelectedFrame(frames[dir][0] || null);
+  };
 
   return (
     <div
@@ -120,9 +174,9 @@ function DetailPanel({ v, onClose }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           borderRadius: "12px",
-          maxWidth: "480px",
+          maxWidth: "700px",
           width: "100%",
-          maxHeight: "85vh",
+          maxHeight: "90vh",
           overflowY: "auto",
           padding: "20px",
           fontFamily: "sans-serif",
@@ -149,7 +203,6 @@ function DetailPanel({ v, onClose }) {
           ✕
         </button>
 
-        {/* Accent bar */}
         <div
           style={{
             height: "4px",
@@ -161,16 +214,14 @@ function DetailPanel({ v, onClose }) {
 
         <div
           className="detail-title"
-          style={{ fontSize: "17px", fontWeight: "bold", marginBottom: "6px" }}
+          style={{ fontSize: "17px", fontWeight: "bold", marginBottom: "4px" }}
         >
           🌋 {v.name}
         </div>
-
         <div className="detail-muted" style={{ marginBottom: "4px" }}>
           📍 {v.country}
           {v.location?.[0] ? ` — ${v.location[0].name}` : ""}
         </div>
-
         <div
           className="detail-dim"
           style={{ fontSize: "11px", marginBottom: "12px" }}
@@ -184,7 +235,7 @@ function DetailPanel({ v, onClose }) {
             display: "flex",
             gap: "8px",
             flexWrap: "wrap",
-            marginBottom: "12px",
+            marginBottom: "14px",
           }}
         >
           <span
@@ -212,6 +263,176 @@ function DetailPanel({ v, onClose }) {
             {hasDeformation ? "⚠ Deformation Observed" : "No Deformation"}
           </span>
         </div>
+
+        {/* ── Sentinel-1 Time Series Section ─────────────────────────── */}
+        {hasFrames && (
+          <div style={{ marginBottom: "16px" }}>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#00aaff",
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                marginBottom: "10px",
+                borderBottom: "1px solid #2a2a2a",
+                paddingBottom: "6px",
+              }}
+            >
+              🛰 Sentinel-1 Frame — Time Series Analysis
+            </div>
+
+            {/* Ascending / Descending orbit toggle */}
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                marginBottom: "10px",
+                alignItems: "center",
+              }}
+            >
+              <span
+                style={{ fontSize: "11px", color: "#888", marginRight: "4px" }}
+              >
+                Orbit direction:
+              </span>
+              {["ascending", "descending"].map((dir) => {
+                const count = frames[dir].length;
+                const isActive = orbitDir === dir;
+                return (
+                  <button
+                    key={dir}
+                    onClick={() => handleOrbitChange(dir)}
+                    disabled={count === 0}
+                    className={`orbit-btn${isActive ? " active" : ""}${dir === "ascending" ? " ascending" : " descending"}`}
+                  >
+                    {dir === "ascending" ? "↗ Ascending" : "↘ Descending"}
+                    {count > 0 && (
+                      <span
+                        style={{
+                          marginLeft: "5px",
+                          fontSize: "10px",
+                          opacity: 0.65,
+                        }}
+                      >
+                        ({count})
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Frame selector chips */}
+            {frames[orbitDir].length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: "6px",
+                  flexWrap: "wrap",
+                  marginBottom: "10px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "11px",
+                    color: "#888",
+                    alignSelf: "center",
+                  }}
+                >
+                  Frame:
+                </span>
+                {frames[orbitDir].map((f) => {
+                  const active = selectedFrame?.filename === f.filename;
+                  return (
+                    <button
+                      key={f.filename}
+                      onClick={() => setSelectedFrame(f)}
+                      className={`frame-btn${active ? " active" : ""}`}
+                    >
+                      {f.track}
+                      {orbitDir === "ascending" ? "A" : "D"}_{f.frame}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Interactive COMET Time Series Iframe */}
+            {selectedFrame && (
+              <div style={{ marginTop: "14px", marginBottom: "14px" }}>
+                <div style={{ fontSize: "11px", color: "#888", marginBottom: "6px", fontWeight: "600" }}>
+                  Interactive Time Series (COMET Portal):
+                </div>
+                <div
+                  style={{
+                    width: "100%",
+                    height: "400px",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    border: "1px solid #333",
+                    backgroundColor: "#111",
+                  }}
+                >
+                  <iframe
+                    src={getProxyUrl(`${cometTimeSeriesUrl(v)}?frame=${selectedFrame.frameCode}`)}
+                    title={`${v.name} Time Series`}
+                    style={{ width: "100%", height: "100%", border: "none" }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* InSAR interferogram image */}
+            {selectedFrame && (
+              <div style={{ marginBottom: "12px" }}>
+                <img
+                  src={selectedFrame.url}
+                  alt={selectedFrame.filename}
+                  style={{
+                    width: "100%",
+                    borderRadius: "6px",
+                    display: "block",
+                    border: "1px solid #2a2a2a",
+                  }}
+                />
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "#555",
+                    marginTop: "4px",
+                    textAlign: "center",
+                  }}
+                >
+                  Sentinel-1 InSAR · {orbitDir} · track {selectedFrame.track},
+                  frame {selectedFrame.frame}
+                </div>
+              </div>
+            )}
+
+            {/* Time series link */}
+            <a
+              href={`${cometTimeSeriesUrl(v)}${selectedFrame ? `?frame=${selectedFrame.frameCode}` : ""}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "#0a1a2a",
+                border: "1px solid #00aaff",
+                color: "#00aaff",
+                textDecoration: "none",
+                padding: "7px 14px",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: "600",
+              }}
+            >
+              📈 Open Time Series Analysis on COMET →
+            </a>
+          </div>
+        )}
 
         {v.duration_of_observation && (
           <div style={{ marginBottom: "10px" }}>
@@ -243,19 +464,6 @@ function DetailPanel({ v, onClose }) {
           >
             {description}
           </div>
-        )}
-
-        {firstImage && (
-          <img
-            src={firstImage.url}
-            alt={v.name}
-            style={{
-              width: "100%",
-              borderRadius: "8px",
-              display: "block",
-              marginBottom: "12px",
-            }}
-          />
         )}
 
         <a
@@ -367,17 +575,14 @@ function Volcano() {
     let cancelled = false;
     const checkUploads = async () => {
       try {
-        const res = await fetch("/api/uploads?hazardType=volcano");
+        const res = await fetch(
+          "/api/uploads?hazardType=volcano&status=approved",
+        );
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
         if (!cancelled) setHasLocalUploads(data.length > 0);
       } catch {
-        if (!cancelled) {
-          const saved = JSON.parse(
-            localStorage.getItem("disasterUploads") || "[]",
-          );
-          setHasLocalUploads(saved.some((u) => u.disasterType === "Volcano"));
-        }
+        // On fetch failure, keep current state — don't hide the map
       }
     };
     checkUploads();
@@ -437,12 +642,12 @@ function Volcano() {
         backgroundColor: "#111",
       }}
     >
-      <DetailPanel v={selected} onClose={() => setSelected(null)} />
+      <DetailPanel key={selected?.ID || "none"} v={selected} onClose={() => setSelected(null)} />
 
       {/* LEFT COLUMN */}
       <div
         style={{
-          flex: 2,
+          flex: 3,
           display: "flex",
           flexDirection: "column",
           gap: "20px",
@@ -453,36 +658,34 @@ function Volcano() {
           <div
             style={{
               flex: 1,
-              padding: "15px",
-              backgroundColor: "#222",
-              borderRadius: "8px",
+              backgroundColor: "#1a1a1a",
+              borderRadius: "10px",
+              overflow: "hidden",
               display: "flex",
               flexDirection: "column",
             }}
           >
-            <div style={{ overflow: "auto", marginBottom: "10px" }}>
-              <LocalDisasterData disasterType="Volcano" />
-            </div>
+            <div style={titleStyle}>Local Volcano Data (Ethiopia)</div>
             <div
               style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
+                padding: "10px 14px",
+                borderBottom: "1px solid #2a2a2a",
+                minHeight: "72px",
               }}
             >
-              {!hasLocalUploads && (
-                <div
-                  style={{
-                    flex: 1,
-                    minHeight: "340px",
-                    marginBottom: "10px",
-                    position: "relative",
-                  }}
-                >
+              <LocalDisasterData
+                disasterType="Volcano"
+                onUploadReady={(upload) => setHasLocalUploads(!!upload)}
+              />
+            </div>
+            <div style={{ flex: 1, position: "relative", minHeight: "340px" }}>
+              {hasLocalUploads ? (
+                <UploadedImageFill disasterType="Volcano" />
+              ) : (
+                <>
                   <MapContainer
                     center={[9.145, 40.489673]}
-                    zoom={6}
+                    zoom={5}
                     style={{
                       height: "100%",
                       width: "100%",
@@ -496,7 +699,7 @@ function Volcano() {
                     <EthiopiaMask paneNames={[]} />
                   </MapContainer>
                   <MapTypeToggle mapType={mapType} setMapType={setMapType} />
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -598,7 +801,7 @@ function Volcano() {
             <div style={{ flex: 1, minHeight: "340px", position: "relative" }}>
               <MapContainer
                 center={[9.145, 40.489673]}
-                zoom={6}
+                zoom={5}
                 style={{ height: "100%", width: "100%", minHeight: "340px" }}
               >
                 <TileLayer

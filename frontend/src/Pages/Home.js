@@ -64,15 +64,15 @@ function Home() {
         color: "var(--text-primary)",
       }}
     >
-      <h2
-        style={{ fontSize: "32px", marginBottom: "20px", fontWeight: "bold" }}
-      >
-        <span style={{ color: "#1f4fd8" }}>Welcome to the </span>
-        <span style={{ color: "#1f4fd8" }}>Geodesy</span>
-        <span style={{ color: "#f28c28" }}> & </span>
-        <span style={{ color: "#1f4fd8" }}>Geodynamics</span>
-        <span style={{ color: "#f28c28" }}> Department</span>
+      <h2 style={{ fontSize: "32px", marginBottom: "8px", fontWeight: "bold" }}>
+        <span style={{ color: "#1f4fd8" }}>Disaster </span>
+        <span style={{ color: "#f28c28" }}>Monitoring </span>
+        <span style={{ color: "#1f4fd8" }}>Center</span>
       </h2>
+      <p style={{ fontSize: "13px", color: "#888", marginBottom: "20px" }}>
+        Under the Geodesy &amp; Geodynamics Department — Ethiopian Space Science
+        and Geospatial Institute (SSGI)
+      </p>
 
       <p
         style={{
@@ -169,7 +169,9 @@ function Home() {
                 >
                   {h.emoji} {h.title}
                 </h4>
-                <p style={{ color: "var(--text-secondary)", lineHeight: "1.6" }}>
+                <p
+                  style={{ color: "var(--text-secondary)", lineHeight: "1.6" }}
+                >
                   {h.desc}
                 </p>
               </div>

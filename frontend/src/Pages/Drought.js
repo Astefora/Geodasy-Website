@@ -2,7 +2,9 @@ import { useState, useCallback, useEffect } from "react";
 import { MapContainer, TileLayer, WMSTileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "../styles/GlobalDataCard.css";
-import LocalDisasterData from "../Componenet/LocalDisasterData";
+import LocalDisasterData, {
+  UploadedImageFill,
+} from "../Componenet/LocalDisasterData";
 import EthiopiaMask from "../Componenet/EthiopiaMask";
 
 const MAP_TYPES = {
@@ -89,17 +91,7 @@ function MapTypeToggle({ mapType, setMapType }) {
           key={key}
           onClick={() => setMapType(key)}
           title={type.description}
-          style={{
-            padding: "6px 12px",
-            borderRadius: "4px",
-            border: "1px solid #444",
-            background: mapType === key ? "#00aaff" : "#222",
-            color: mapType === key ? "#000" : "#aaa",
-            fontSize: "12px",
-            fontWeight: "600",
-            cursor: "pointer",
-            transition: "all 0.2s",
-          }}
+          className={`map-toggle-btn${mapType === key ? " active" : ""}`}
         >
           {type.label}
         </button>
@@ -188,23 +180,16 @@ function Drought() {
     let cancelled = false;
     const checkUploads = async () => {
       try {
-        const res = await fetch("/api/uploads?hazardType=drought");
+        const res = await fetch(
+          "/api/uploads?hazardType=drought&status=approved",
+        );
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
         if (!cancelled) {
           setHasLocalUploads(data.length > 0);
         }
       } catch {
-        // Try localStorage as fallback
-        if (!cancelled) {
-          const saved = JSON.parse(
-            localStorage.getItem("disasterUploads") || "[]",
-          );
-          const droughtUploads = saved.filter(
-            (u) => u.disasterType === "Drought",
-          );
-          setHasLocalUploads(droughtUploads.length > 0);
-        }
+        // On fetch failure, keep current state — don't hide the map
       }
     };
     checkUploads();
@@ -227,51 +212,51 @@ function Drought() {
       {/* LEFT COLUMN — wider */}
       <div
         style={{
-          flex: 2,
+          flex: 3,
           display: "flex",
           flexDirection: "column",
           gap: "20px",
         }}
       >
         <div style={{ display: "flex", gap: "20px", alignItems: "stretch" }}>
+          {/* ── Local Data card — mirrors global card layout ── */}
           <div
             style={{
               flex: 1,
-              padding: "15px",
-              backgroundColor: "#222",
-              borderRadius: "8px",
+              backgroundColor: "#1a1a1a",
+              borderRadius: "10px",
+              overflow: "hidden",
               display: "flex",
               flexDirection: "column",
             }}
           >
+            {/* Title — always visible, same style as global */}
+            <div style={titleStyle}>Local Drought Data (Ethiopia)</div>
+
+            {/* Metadata section — fixed height */}
             <div
               style={{
-                overflow: "auto",
-                marginBottom: "10px",
+                padding: "10px 14px",
+                borderBottom: "1px solid #2a2a2a",
+                minHeight: "72px",
               }}
             >
-              <LocalDisasterData disasterType="Drought" />
+              <LocalDisasterData
+                disasterType="Drought"
+                onUploadReady={(upload) => setHasLocalUploads(!!upload)}
+              />
             </div>
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-              }}
-            >
-              {!hasLocalUploads && (
-                <div
-                  style={{
-                    flex: 1,
-                    minHeight: "340px",
-                    marginBottom: "10px",
-                    position: "relative",
-                  }}
-                >
+
+            {/* Fill area — map OR uploaded image, stretches to bottom */}
+            <div style={{ flex: 1, position: "relative", minHeight: "340px" }}>
+              {hasLocalUploads ? (
+                // Show uploaded image full-size
+                <UploadedImageFill disasterType="Drought" />
+              ) : (
+                <>
                   <MapContainer
                     center={[9.145, 40.489673]}
-                    zoom={6}
+                    zoom={5}
                     style={{
                       height: "100%",
                       width: "100%",
@@ -285,7 +270,7 @@ function Drought() {
                     <EthiopiaMask paneNames={[]} />
                   </MapContainer>
                   <MapTypeToggle mapType={mapType} setMapType={setMapType} />
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -320,7 +305,7 @@ function Drought() {
             <div style={{ flex: 1, minHeight: "340px", position: "relative" }}>
               <MapContainer
                 center={[9.145, 40.489673]}
-                zoom={6}
+                zoom={5}
                 style={{ height: "100%", width: "100%", minHeight: "340px" }}
               >
                 <CreatePane name="droughtOverlayPane" zIndex={450} />
