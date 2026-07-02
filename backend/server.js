@@ -709,6 +709,145 @@ function fetchCometPage(targetUrl, clientRes) {
           // Replace comet-volcanodb.org with our proxy route
           html = html.replace(/https:\/\/comet-volcanodb\.org/g, "/api/comet-db-proxy");
 
+          // Inject custom css to isolate the two plots side-by-side and style them dark
+          const customCss = `
+<style>
+  body > div:first-of-type,
+  body > div:nth-of-type(2),
+  nav,
+  .navbar,
+  .entry-header,
+  .tabrow,
+  .tabrow + div > div:first-of-type,
+  .s1_page_hdr,
+  .s1_section_hdr,
+  p,
+  #row_s1_frame,
+  #row_disp_res,
+  #row_disp_correct,
+  #row_s1_type,
+  #row_licsar_images,
+  #row_licsar_img_range,
+  #row_data_downloads,
+  #row_prob_data,
+  #row_prob_range,
+  #hr_disp_plot,
+  #hr_licsar_images,
+  #hr_prob_data,
+  hr,
+  footer {
+    display: none !important;
+  }
+  
+  html, body {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    font-family: sans-serif !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 10px !important;
+    box-sizing: border-box !important;
+    background-color: #ffffff !important;
+  }
+  
+  #row_disp_plot {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    margin: 0 0 10px 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    background-color: #ffffff !important;
+  }
+  
+  .disp_plot_box {
+    flex: 1 1 48% !important;
+    max-width: 50% !important;
+    margin: 0 !important;
+    background-color: #ffffff !important;
+    border: none !important;
+    box-sizing: border-box !important;
+    height: 0 !important;
+    padding-top: 45% !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+  
+  .disp_plot {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: #ffffff !important;
+  }
+  
+  .col_plot_control {
+    flex: 1 1 48% !important;
+    max-width: 50% !important;
+    margin-top: 10px !important;
+    padding: 5px !important;
+    box-sizing: border-box !important;
+  }
+  
+  #row_disp_range {
+    margin: 10px 0 0 0 !important;
+    padding: 0 5px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    background-color: #ffffff !important;
+  }
+  
+  #row_disp_range h3.s1_page_hdr {
+    display: none !important;
+  }
+  
+  button {
+    background-color: #f0f2f5 !important;
+    color: #333333 !important;
+    border: 1px solid #d0d0d0 !important;
+    border-radius: 4px !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    cursor: pointer !important;
+    transition: all 0.15s !important;
+    font-weight: 600 !important;
+  }
+  
+  button:hover {
+    background-color: #e4e6eb !important;
+    color: #000000 !important;
+    border-color: #b0b3b8 !important;
+  }
+  
+  button:disabled, button[disabled] {
+    background-color: #f5f6f7 !important;
+    color: #ccd0d5 !important;
+    border-color: #f5f6f7 !important;
+    cursor: not-allowed !important;
+  }
+  
+  button.active, button[disabled="true"] {
+    background-color: #00aaff !important;
+    color: #ffffff !important;
+    border-color: #00aaff !important;
+    opacity: 1 !important;
+  }
+</style>
+`;
+          html = html.replace("</head>", `${customCss}</head>`);
+
           // Copy headers but omit those that block iframe rendering
           Object.keys(cometRes.headers).forEach((key) => {
             const lowerKey = key.toLowerCase();
@@ -748,12 +887,16 @@ function fetchCometPage(targetUrl, clientRes) {
 
   request.on("error", (err) => {
     console.log(`[server] HTML proxy error: ${err.message}`);
-    clientRes.status(502).json({ error: "Proxy request failed", detail: err.message });
+    if (!clientRes.headersSent) {
+      clientRes.status(502).json({ error: "Proxy request failed", detail: err.message });
+    }
   });
 
   request.setTimeout(20000, () => {
     request.destroy();
-    clientRes.status(504).json({ error: "Proxy timeout" });
+    if (!clientRes.headersSent) {
+      clientRes.status(504).json({ error: "Proxy timeout" });
+    }
   });
 }
 
@@ -793,12 +936,16 @@ app.get("/api/comet-db-proxy/*", (req, res) => {
 
   request.on("error", (err) => {
     console.log(`[server] COMET DB proxy error: ${err.message}`);
-    res.status(502).json({ error: "Proxy request failed", detail: err.message });
+    if (!res.headersSent) {
+      res.status(502).json({ error: "Proxy request failed", detail: err.message });
+    }
   });
 
   request.setTimeout(20000, () => {
     request.destroy();
-    res.status(504).json({ error: "Proxy timeout" });
+    if (!res.headersSent) {
+      res.status(504).json({ error: "Proxy timeout" });
+    }
   });
 });
 

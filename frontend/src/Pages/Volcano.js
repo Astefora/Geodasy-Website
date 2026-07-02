@@ -132,6 +132,12 @@ const getProxyUrl = (targetUrl) => {
   return path;
 };
 
+// Returns the correct base URL for backend API calls.
+// In dev (port 3000) the React proxy can intercept some requests and return HTML.
+// Hitting the backend directly avoids that.
+const getApiBase = () =>
+  window.location.port === "3000" ? "http://localhost:5002" : "";
+
 // ── Click detail panel — uses CSS classes so theme overrides can't break it ─
 function DetailPanel({ v, onClose }) {
   // Hooks must be unconditional — call before any early return
@@ -174,7 +180,7 @@ function DetailPanel({ v, onClose }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           borderRadius: "12px",
-          maxWidth: "700px",
+          maxWidth: "1100px",
           width: "100%",
           maxHeight: "90vh",
           overflowY: "auto",
@@ -361,21 +367,30 @@ function DetailPanel({ v, onClose }) {
             {/* Interactive COMET Time Series Iframe */}
             {selectedFrame && (
               <div style={{ marginTop: "14px", marginBottom: "14px" }}>
-                <div style={{ fontSize: "11px", color: "#888", marginBottom: "6px", fontWeight: "600" }}>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#888",
+                    marginBottom: "6px",
+                    fontWeight: "600",
+                  }}
+                >
                   Interactive Time Series (COMET Portal):
                 </div>
                 <div
                   style={{
                     width: "100%",
-                    height: "400px",
+                    height: "560px",
                     borderRadius: "8px",
                     overflow: "hidden",
-                    border: "1px solid #333",
-                    backgroundColor: "#111",
+                    border: "1px solid #ddd",
+                    backgroundColor: "#fff",
                   }}
                 >
                   <iframe
-                    src={getProxyUrl(`${cometTimeSeriesUrl(v)}?frame=${selectedFrame.frameCode}`)}
+                    src={getProxyUrl(
+                      `${cometTimeSeriesUrl(v)}?frame=${selectedFrame.frameCode}`,
+                    )}
                     title={`${v.name} Time Series`}
                     style={{ width: "100%", height: "100%", border: "none" }}
                   />
@@ -548,7 +563,7 @@ function Volcano() {
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/comet-volcanoes")
+    fetch(`${getApiBase()}/api/comet-volcanoes`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -576,7 +591,7 @@ function Volcano() {
     const checkUploads = async () => {
       try {
         const res = await fetch(
-          "/api/uploads?hazardType=volcano&status=approved",
+          `${getApiBase()}/api/uploads?hazardType=volcano&status=approved`,
         );
         if (!res.ok) throw new Error("Failed to fetch uploads");
         const data = await res.json();
@@ -642,7 +657,11 @@ function Volcano() {
         backgroundColor: "#111",
       }}
     >
-      <DetailPanel key={selected?.ID || "none"} v={selected} onClose={() => setSelected(null)} />
+      <DetailPanel
+        key={selected?.ID || "none"}
+        v={selected}
+        onClose={() => setSelected(null)}
+      />
 
       {/* LEFT COLUMN */}
       <div
