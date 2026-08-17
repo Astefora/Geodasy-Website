@@ -107,16 +107,7 @@ function Home() {
         Research Portal
       </Link>
 
-      <img
-        src="https://images.unsplash.com/photo-1581090700227-1f1b4c86c9e1?auto=format&fit=crop&w=800&q=80"
-        alt="Geodesy"
-        style={{
-          width: "80%",
-          marginTop: "40px",
-          borderRadius: "15px",
-          boxShadow: "0 4px 15px rgba(255,255,255,0.15)",
-        }}
-      />
+      {/* * */}
 
       <div style={{ marginTop: "60px", padding: "0 20px" }}>
         <h3
