@@ -59,7 +59,8 @@ function Research() {
   useEffect(() => {
     const loadUploads = async () => {
       try {
-        const response = await fetch("/api/uploads");
+        // Only fetch approved uploads — pending/rejected should not appear here
+        const response = await fetch("/api/uploads?status=approved");
         if (!response.ok) {
           console.error(
             "Failed to fetch uploads:",
@@ -92,7 +93,12 @@ function Research() {
   }, []);
 
   const topicUploads = useMemo(
-    () => uploads.filter((upload) => uploadMatchesTopic(upload, selectedTopic)),
+    () =>
+      uploads.filter(
+        (upload) =>
+          uploadMatchesTopic(upload, selectedTopic) &&
+          !upload.title?.startsWith("Disaster Data:"),
+      ),
     [uploads, selectedTopic],
   );
 
@@ -307,9 +313,19 @@ function Research() {
                       color: "#ddd",
                       whiteSpace: "pre-wrap",
                       lineHeight: 1.6,
+                      background: "#0d0d0d",
+                      border: "1px solid #2a2a2a",
+                      borderRadius: "6px",
+                      padding: "12px",
+                      marginTop: "8px",
+                      fontSize: "14px",
                     }}
                   >
-                    {upload.content}
+                    {upload.content || (
+                      <span style={{ color: "#555", fontStyle: "italic" }}>
+                        No text content available.
+                      </span>
+                    )}
                   </div>
                 )}
 

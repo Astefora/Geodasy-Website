@@ -1,7 +1,7 @@
 /* ─── Theme CSS Variables ──────────────────────────────────────────────────── */
 
 body[data-theme="dark"] {
-  --bg-primary: #000;
+  --bg-primary: #030712;
   --bg-secondary: #111;
   --bg-card: #1a1a1a;
   --bg-card-alt: #222;
@@ -21,8 +21,8 @@ body[data-theme="dark"] {
 }
 
 body[data-theme="light"] {
-  --bg-primary: #f0f2f5;
-  --bg-secondary: #ffffff;
+  --bg-primary: #f9fafb;
+  --bg-secondary: #f5f5f5;
   --bg-card: #ffffff;
   --bg-card-alt: #f8f9fa;
   --bg-input: #ffffff;
@@ -41,11 +41,21 @@ body[data-theme="light"] {
 }
 
 body {
-  background-color: var(--bg-primary) !important;
+  /* Base page color — matches Tailwind gray-50/gray-950 used by page components */
+  background-color: rgba(249, 250, 251, 0.8) !important;
   color: var(--text-primary);
   transition:
     background-color 0.3s,
     color 0.3s;
+}
+
+/* Override: dark mode body matches Tailwind gray-950 */
+body[data-theme="dark"] {
+  background-color: #030712 !important; /* Tailwind gray-950 */
+}
+/* Override: light mode body matches Tailwind gray-50 */
+body[data-theme="light"] {
+  background-color: #f9fafb !important; /* Tailwind gray-50 */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -55,25 +65,58 @@ body {
    !important to force light colors on ALL elements when in light mode.
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* ── ALL div backgrounds → light ──────────────────────────────────────────── */
-body[data-theme="light"] div {
+/* ── ALL div backgrounds → light (preserve colored UI elements) ──────────── */
+body[data-theme="light"]
+  div:not([style*="background-color: rgb(245, 158, 11)"]):not(
+    [style*="background-color: rgb(16, 185, 129)"]
+  ):not([style*="background-color: rgb(31, 79, 216)"]):not(
+    [style*="background-color: rgb(6, 182, 212)"]
+  ):not([style*="background-color: rgb(59, 130, 246)"]):not(
+    [style*="background-color: rgb(239, 68, 68)"]
+  ):not([style*="background-color: rgb(249, 115, 22)"]):not(
+    [style*="background-color: rgb(234, 179, 8)"]
+  ):not([style*="background-color: rgb(180, 83, 9)"]):not(
+    [style*="background-color: rgb(254, 243, 199)"]
+  ):not([style*="background-color: rgb(209, 250, 229)"]):not(
+    [style*="background-color: rgb(219, 234, 254)"]
+  ):not([style*="background-color: rgb(207, 250, 254)"]):not(
+    [style*="background-color: rgb(254, 226, 226)"]
+  ):not([style*="background-color: rgb(2, 44, 34)"]):not(
+    [style*="background-color: rgb(45, 10, 10)"]
+  ) {
   background-color: transparent;
 }
 
 /* Specific dark backgrounds that pages use inline → override to light */
-body[data-theme="light"] [style] {
-  --force-bg: initial;
+body[data-theme="light"]
+  div[style*="background-color"]:not(
+    [style*="background-color: rgb(245, 158, 11)"]
+  ):not([style*="background-color: rgb(16, 185, 129)"]):not(
+    [style*="background-color: rgb(31, 79, 216)"]
+  ):not([style*="background-color: rgb(6, 182, 212)"]):not(
+    [style*="background-color: rgb(59, 130, 246)"]
+  ):not([style*="background-color: rgb(239, 68, 68)"]):not(
+    [style*="background-color: rgb(249, 115, 22)"]
+  ):not([style*="background-color: rgb(234, 179, 8)"]):not(
+    [style*="background-color: rgb(180, 83, 9)"]
+  ):not([style*="background-color: rgb(254, 243, 199)"]):not(
+    [style*="background-color: rgb(209, 250, 229)"]
+  ):not([style*="background-color: rgb(219, 234, 254)"]):not(
+    [style*="background-color: rgb(207, 250, 254)"]
+  ):not([style*="background-color: rgb(254, 226, 226)"]):not(
+    [style*="background-color: rgb(2, 44, 34)"]
+  ):not([style*="background-color: rgb(45, 10, 10)"]) {
+  background-color: transparent;
 }
 
 /* The root app wrapper and page containers */
 body[data-theme="light"] #root {
-  background-color: var(--bg-primary);
+  background-color: transparent;
 }
 
-body[data-theme="light"] #root > div > div {
-  background-color: var(--bg-primary) !important;
+body[data-theme="light"] #root > div > div:not(.header-wrapper) {
+  /* Removed — App.js root div now owns background */
 }
-
 /* ── Text: force all text readable in light mode ──────────────────────────── */
 body[data-theme="light"] * {
   color: inherit;
@@ -175,14 +218,15 @@ body[data-theme="dark"] .leaflet-tooltip * {
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* ── Hazard pages: main wrapper (backgroundColor: "#111") ─────────────────── */
+/* Use semi-transparent so topographic background shows through */
 body[data-theme="light"] div[style*="background-color"] {
-  background-color: var(--bg-primary) !important;
+  background-color: rgba(249, 250, 251, 0.85) !important;
 }
 
 /* ── Cards (backgroundColor: "#222", "#1a1a1a", "#0b0b0b") ───────────────── */
 body[data-theme="light"]
   div[style*="background-color"][style*="border-radius"] {
-  background-color: var(--bg-card) !important;
+  background-color: rgba(255, 255, 255, 0.88) !important;
   border-color: var(--border-light) !important;
   box-shadow: 0 1px 4px var(--shadow);
 }
@@ -191,32 +235,32 @@ body[data-theme="light"]
 body[data-theme="light"] div[style*="background: rgb(17, 17, 17)"],
 body[data-theme="light"] div[style*="background: rgb(11, 11, 11)"],
 body[data-theme="light"] div[style*="background: rgb(13, 13, 13)"] {
-  background: var(--bg-card-alt) !important;
+  background: rgba(248, 249, 250, 0.8) !important;
 }
 
 /* ── Auth pages (.auth-container, .auth-box) ──────────────────────────────── */
 body[data-theme="light"] .auth-container {
-  background-color: var(--bg-primary) !important;
+  background-color: rgba(249, 250, 251, 0.8) !important;
 }
 body[data-theme="light"] .auth-box {
-  background-color: var(--bg-card) !important;
+  background-color: rgba(255, 255, 255, 0.88) !important;
   border-color: var(--border-light) !important;
 }
 
 /* ── Admin panel ──────────────────────────────────────────────────────────── */
 body[data-theme="light"] .admin-container {
-  background-color: var(--bg-primary) !important;
+  background-color: rgba(249, 250, 251, 0.8) !important;
   color: var(--text-primary) !important;
 }
 body[data-theme="light"] .user-card,
 body[data-theme="light"] .upload-card {
-  background-color: var(--bg-card) !important;
+  background-color: rgba(255, 255, 255, 0.88) !important;
   border-color: var(--border-light) !important;
 }
 
 /* ── Home page (backgroundColor: "#000") ──────────────────────────────────── */
 body[data-theme="light"] div[style*="background-color: rgb(0, 0, 0)"] {
-  background-color: var(--bg-primary) !important;
+  background-color: rgba(249, 250, 251, 0.8) !important;
 }
 
 /* ── Gradient buttons — keep text white ───────────────────────────────────── */
@@ -280,16 +324,16 @@ body[data-theme="light"] button[style*="box-shadow"] {
 
 /* ── Dashboard: card panels (background: "#111", border: "1px solid #1f4fd8") */
 body[data-theme="light"] div[style*="background: rgb(17, 17, 17)"] {
-  background: #ffffff !important;
+  background: rgba(255, 255, 255, 0.88) !important;
   border-color: #d0d0d0 !important;
 }
 
 body[data-theme="light"] div[style*="background: rgb(11, 11, 11)"] {
-  background: #f8f9fa !important;
+  background: rgba(248, 249, 250, 0.8) !important;
 }
 
 body[data-theme="light"] div[style*="background: rgb(13, 13, 13)"] {
-  background: #f5f7fa !important;
+  background: rgba(245, 247, 250, 0.8) !important;
 }
 
 /* ── Dashboard: Submit/gradient buttons — keep text white ─────────────────── */
@@ -317,7 +361,7 @@ body[data-theme="light"] div[style*="border"][style*="dashed"] {
 /* ── Dashboard: history items ─────────────────────────────────────────────── */
 body[data-theme="light"]
   div[style*="background: rgb(13, 13, 13)"][style*="border-radius"] {
-  background: #f5f7fa !important;
+  background: rgba(245, 247, 250, 0.8) !important;
   border-color: #e0e0e0 !important;
 }
 
@@ -330,10 +374,12 @@ body[data-theme="light"] .auth-btn {
 }
 
 /* ── Fix: any remaining white/light text that's invisible ─────────────────── */
-body[data-theme="light"] [style*="color: rgb(255, 255, 255)"] {
+/* Exclude buttons — white text on buttons means they have a colored background (intentional) */
+body[data-theme="light"]
+  :not(button):not(span)[style*="color: rgb(255, 255, 255)"] {
   color: #1a1a1a !important;
 }
-body[data-theme="light"] [style*="color: white"] {
+body[data-theme="light"] :not(button):not(span)[style*="color: white"] {
   color: #1a1a1a !important;
 }
 body[data-theme="light"] [style*="color: rgb(170, 170, 170)"] {
@@ -352,10 +398,67 @@ body[data-theme="light"] [style*="color: rgb(85, 85, 85)"] {
   color: #666 !important;
 }
 
-/* ── Exception: keep white text on colored/dark backgrounds ───────────────── */
+/* ── Exception: keep colored icon boxes and badge backgrounds ─────────────── */
+body[data-theme="light"] [style*="background-color: rgb(245, 158, 11)"] {
+  background-color: #f59e0b !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(16, 185, 129)"] {
+  background-color: #10b981 !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(31, 79, 216)"] {
+  background-color: #1f4fd8 !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(6, 182, 212)"] {
+  background-color: #06b6d4 !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(59, 130, 246)"] {
+  background-color: #3b82f6 !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(239, 68, 68)"] {
+  background-color: #ef4444 !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(249, 115, 22)"] {
+  background-color: #f97316 !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(234, 179, 8)"] {
+  background-color: #eab308 !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(180, 83, 9)"] {
+  background-color: #b45309 !important;
+}
+/* Badge light tints */
+body[data-theme="light"] [style*="background-color: rgb(254, 243, 199)"] {
+  background-color: #fef3c7 !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(209, 250, 229)"] {
+  background-color: #d1fae5 !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(219, 234, 254)"] {
+  background-color: #dbeafe !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(207, 250, 254)"] {
+  background-color: #cffafe !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(254, 226, 226)"] {
+  background-color: #fee2e2 !important;
+}
+/* Toast dark backgrounds */
+body[data-theme="light"] [style*="background-color: rgb(2, 44, 34)"] {
+  background-color: #022c22 !important;
+}
+body[data-theme="light"] [style*="background-color: rgb(45, 10, 10)"] {
+  background-color: #2d0a0a !important;
+}
+
+/* ── Keep white text on solid colored backgrounds ─────────────────────────── */
+body[data-theme="light"] [style*="background-color: rgb(245, 158, 11)"] *,
+body[data-theme="light"] [style*="background-color: rgb(16, 185, 129)"] *,
 body[data-theme="light"] [style*="background-color: rgb(31, 79, 216)"] *,
-body[data-theme="light"] [style*="background: linear-gradient"] *,
-body[data-theme="light"] [style*="background: rgb(46, 125, 50)"] * {
+body[data-theme="light"] [style*="background-color: rgb(6, 182, 212)"] *,
+body[data-theme="light"] [style*="background-color: rgb(59, 130, 246)"] *,
+body[data-theme="light"] [style*="background-color: rgb(239, 68, 68)"] *,
+body[data-theme="light"] [style*="background-color: rgb(249, 115, 22)"] *,
+body[data-theme="light"] [style*="background-color: rgb(180, 83, 9)"] * {
   color: #fff !important;
 }
 
@@ -393,4 +496,284 @@ body[data-theme="light"] div[style*="background: rgb(26, 26, 46)"],
 body[data-theme="light"] div[style*="background-color: rgb(26, 26, 46)"] {
   background: #eef2ff !important;
   border-color: #1f4fd8 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TAILWIND INTEGRATION — prevent theme.css !important rules from stomping
+   Tailwind classes on the Home page and other Tailwind-styled components.
+   Tailwind uses .dark class on <html>; these selectors are specific enough
+   to win without breaking existing pages.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Home page root — transparent so topographic background shows through */
+body[data-theme="light"] .min-h-screen {
+  background-color: transparent !important;
+  color: rgb(17 24 39) !important;
+}
+
+/* Tailwind bg-white/bg-gray sections — semi-transparent so terrain shows through */
+body[data-theme="light"] .bg-white {
+  background-color: rgba(255, 255, 255, 0.82) !important;
+}
+body[data-theme="light"] .bg-gray-50 {
+  background-color: rgba(249, 250, 251, 0.75) !important;
+}
+
+/* Tailwind text classes — must not be overridden by the broad color rules */
+body[data-theme="light"] .text-gray-900 {
+  color: rgb(17 24 39) !important;
+}
+body[data-theme="light"] .text-gray-700 {
+  color: rgb(55 65 81) !important;
+}
+body[data-theme="light"] .text-gray-600 {
+  color: rgb(75 85 99) !important;
+}
+body[data-theme="light"] .text-gray-500 {
+  color: rgb(107 114 128) !important;
+}
+body[data-theme="light"] .text-gray-400 {
+  color: rgb(156 163 175) !important;
+}
+body[data-theme="light"] .text-white {
+  color: #ffffff !important;
+}
+
+body[data-theme="light"] .text-blue-700 {
+  color: rgb(29 78 216) !important;
+}
+body[data-theme="light"] .text-blue-600 {
+  color: rgb(37 99 235) !important;
+}
+body[data-theme="light"] .text-blue-400 {
+  color: rgb(96 165 250) !important;
+}
+body[data-theme="light"] .text-orange-500 {
+  color: rgb(249 115 22) !important;
+}
+body[data-theme="light"] .text-orange-600 {
+  color: rgb(234 88 12) !important;
+}
+body[data-theme="light"] .text-orange-400 {
+  color: rgb(251 146 60) !important;
+}
+body[data-theme="light"] .text-blue-200 {
+  color: rgb(191 219 254) !important;
+}
+body[data-theme="light"] .text-blue-100 {
+  color: rgb(219 234 254) !important;
+}
+
+/* Keep text white inside the blue CTA banner */
+body[data-theme="light"] .from-blue-700 *,
+body[data-theme="light"] .bg-gradient-to-br.from-blue-700 * {
+  color: #fff !important;
+}
+body[data-theme="light"] .from-blue-700 .text-blue-700 {
+  color: rgb(29 78 216) !important;
+}
+
+/* Tailwind link/button overrides — don't let the broad `a` rule stomp Tailwind */
+body[data-theme="light"] a.text-white {
+  color: #fff !important;
+}
+body[data-theme="light"] a.text-orange-600 {
+  color: rgb(234 88 12) !important;
+}
+body[data-theme="light"] a.text-gray-700 {
+  color: rgb(55 65 81) !important;
+}
+body[data-theme="light"] a.bg-blue-700 {
+  background-color: rgb(29 78 216) !important;
+  color: #fff !important;
+}
+
+/* Prevent the broad h1-h6 rule from overriding Tailwind heading colors */
+body[data-theme="light"] h1.text-blue-700,
+body[data-theme="light"] h2.text-blue-700,
+body[data-theme="light"] h3.text-blue-700 {
+  color: rgb(29 78 216) !important;
+}
+body[data-theme="light"] span.text-blue-700 {
+  color: rgb(29 78 216) !important;
+}
+body[data-theme="light"] span.bg-clip-text {
+  color: transparent !important;
+}
+
+/* Stat numbers */
+body[data-theme="light"] .text-orange-400 {
+  color: rgb(251 146 60) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ADMIN PANEL STAT CARDS — preserve colored icon boxes in light mode
+   These rules use both class + data-attribute for maximum specificity and
+   must come LAST in the file to beat all other !important overrides above.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+body[data-theme="light"] div.admin-stat-icon,
+body[data-theme="light"] div[data-colored="true"],
+body[data-theme="light"] .admin-stat-icon {
+  background-color: revert !important;
+}
+
+/* Force the inline style value to win by using the element's own style attribute */
+body[data-theme="light"] .admin-stat-icon[style],
+body[data-theme="light"] [data-colored="true"][style] {
+  background-color: attr(style) !important;
+}
+
+/* Fallback: use a CSS custom property set by the element itself */
+body[data-theme="light"] .admin-stat-icon {
+  background-color: var(--icon-bg, #f59e0b) !important;
+}
+
+/* Since attr() for background-color is not supported, use a class-per-color approach */
+body[data-theme="light"] .admin-icon-amber {
+  background-color: #f59e0b !important;
+}
+body[data-theme="light"] .admin-icon-emerald {
+  background-color: #10b981 !important;
+}
+body[data-theme="light"] .admin-icon-blue {
+  background-color: #1f4fd8 !important;
+}
+body[data-theme="light"] .admin-icon-cyan {
+  background-color: #06b6d4 !important;
+}
+
+body[data-theme="light"] .admin-stat-icon *,
+body[data-theme="light"] [data-colored="true"] * {
+  color: #ffffff !important;
+}
+
+body[data-theme="light"] .admin-stat-badge[data-colored="true"] {
+  background-color: revert !important;
+}
+
+/* ── Login / Register: right panel (brand-blue background) ──────────────── */
+/* "Welcome Back!" / "Get Started!" headings — keep yellow in both themes */
+body[data-theme="light"] div[style*="background: rgb(57, 73, 171)"] h1,
+body[data-theme="light"] div[style*="background-color: rgb(57, 73, 171)"] h1 {
+  color: #f0d060 !important;
+}
+
+/* Subtitle texts on the right panel — keep white */
+body[data-theme="light"] div[style*="background: rgb(57, 73, 171)"] p,
+body[data-theme="light"] div[style*="background-color: rgb(57, 73, 171)"] p {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Right panel Sign Up / Log In outline buttons */
+body[data-theme="light"] div[style*="background: rgb(57, 73, 171)"] button,
+body[data-theme="light"]
+  div[style*="background-color: rgb(57, 73, 171)"]
+  button {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Right panel background — keep the brand blue solid */
+body[data-theme="light"] div[style*="background: rgb(57, 73, 171)"],
+body[data-theme="light"] div[style*="background-color: rgb(57, 73, 171)"] {
+  background-color: #3949ab !important;
+}
+
+/* Left form panel — keep the soft lavender background */
+body[data-theme="light"] div[style*="background: rgb(240, 238, 255)"],
+body[data-theme="light"] div[style*="background-color: rgb(240, 238, 255)"] {
+  background-color: #f0eeff !important;
+}
+
+/* Left form panel headings ("Log In" / "Create Account") */
+body[data-theme="light"] div[style*="background: rgb(240, 238, 255)"] h2,
+body[data-theme="light"] div[style*="background-color: rgb(240, 238, 255)"] h2 {
+  color: #3949ab !important;
+}
+
+/* ── Geoportal button — always white text on blue background ─────────────── */
+body[data-theme="light"] a.geoportal-btn,
+body[data-theme="light"] a.geoportal-btn span,
+body[data-theme="light"] a.geoportal-btn .geoportal-text,
+body[data-theme="light"] .geoportal-btn,
+body[data-theme="light"] .geoportal-btn span,
+body[data-theme="light"] .geoportal-btn .geoportal-text,
+body[data-theme="light"] span.geoportal-text {
+  color: #ffffff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TOPOGRAPHIC BACKGROUND TRANSPARENCY
+   Make Tailwind section backgrounds semi-transparent in BOTH themes
+   so the procedural terrain SVG shows through page sections.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Dark mode — section and card backgrounds */
+body[data-theme="dark"] .bg-gray-950,
+html.dark .bg-gray-950 {
+  background-color: rgba(3, 7, 18, 0.78) !important;
+}
+body[data-theme="dark"] .bg-gray-900,
+html.dark .bg-gray-900 {
+  background-color: rgba(17, 24, 39, 0.8) !important;
+}
+body[data-theme="dark"] .bg-gray-800,
+html.dark .bg-gray-800 {
+  background-color: rgba(31, 41, 55, 0.82) !important;
+}
+
+/* Light mode — additional section backgrounds */
+body[data-theme="light"] .bg-gray-100,
+html:not(.dark) .bg-gray-100 {
+  background-color: rgba(243, 244, 246, 0.78) !important;
+}
+
+/* Keep card interiors readable — slightly more opaque than section backgrounds */
+body[data-theme="light"] .bg-white\/75,
+body[data-theme="light"] .bg-white\/80 {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+body[data-theme="dark"] .bg-gray-800\/60,
+html.dark .bg-gray-800\/60 {
+  background-color: rgba(31, 41, 55, 0.6) !important;
+}
+
+/* ── Dashboard & Admin header cards — dark mode solid background ─────────── */
+body[data-theme="dark"] .bg-gray-900,
+html.dark .bg-gray-900 {
+  background-color: rgba(17, 24, 39, 0.95) !important;
+}
+body[data-theme="light"] .bg-gray-50 {
+  background-color: rgba(249, 250, 251, 0.92) !important;
+}
+
+/* ── Submission card status badge text colors — light mode ──────────────── */
+body[data-theme="light"] .text-green-700 {
+  color: rgb(21 128 61) !important;
+}
+body[data-theme="light"] .text-green-400 {
+  color: rgb(74 222 128) !important;
+}
+body[data-theme="light"] .text-amber-700 {
+  color: rgb(180 83 9) !important;
+}
+body[data-theme="light"] .text-amber-400 {
+  color: rgb(251 191 36) !important;
+}
+body[data-theme="light"] .text-red-600 {
+  color: rgb(220 38 38) !important;
+}
+body[data-theme="light"] .text-red-400 {
+  color: rgb(248 113 113) !important;
+}
+/* Badge backgrounds — keep them solid */
+body[data-theme="light"] .bg-green-100 {
+  background-color: rgb(220 252 231) !important;
+}
+body[data-theme="light"] .bg-amber-100 {
+  background-color: rgb(254 243 199) !important;
+}
+body[data-theme="light"] .bg-red-100 {
+  background-color: rgb(254 226 226) !important;
 }

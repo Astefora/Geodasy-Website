@@ -26,7 +26,7 @@
 
 /* Download CSV button — compact */
 .csv-btn {
-  padding: 10px 10px;
+  padding: 7px 10px;
   border-radius: 6px;
   border: none;
   background: #2e7d32;
@@ -34,10 +34,10 @@
   font-weight: 700;
   font-size: 12px;
   cursor: pointer;
-  white-space: normal;
+  white-space: nowrap;
   text-align: center;
   line-height: 1.3;
-  width: 72px;
+  width: 100px;
   flex-shrink: 0;
   align-self: stretch;
   display: flex;
@@ -52,7 +52,7 @@
 /* Controls row */
 .controls-row {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   padding: 0 12px 10px;
   align-items: center;
 }
@@ -290,3 +290,188 @@ body[data-theme="light"] .frame-btn.active {
   color: #0369a1 !important;
   border-color: #00aaff !important;
 }
+
+/* ─── Fire page preset filter buttons (Today / 24 hrs / 7 days / 31 days) ── */
+.fire-filter-btn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #1e1e1e;
+  color: #aaa;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.fire-filter-btn:hover {
+  background: #2a2a2a;
+  color: #fff;
+  border-color: #ff6633;
+}
+
+.fire-filter-btn.active {
+  background: #ff4400;
+  color: #fff;
+  border-color: #ff4400;
+}
+
+/* Light mode overrides */
+body[data-theme="light"] .fire-filter-btn {
+  background: #f0f2f5 !important;
+  color: #555 !important;
+  border-color: #ccc !important;
+}
+
+body[data-theme="light"] .fire-filter-btn:hover {
+  background: #ffe5de !important;
+  color: #c0280a !important;
+  border-color: #ff6633 !important;
+}
+
+body[data-theme="light"] .fire-filter-btn.active {
+  background: #ff4400 !important;
+  color: #fff !important;
+  border-color: #cc3300 !important;
+}
+
+/* ── Calendar / days dropdown trigger variant ─────────────────────────────── */
+.fire-filter-btn--cal {
+  min-width: 54px;
+  letter-spacing: 0;
+}
+
+/* ── Days dropdown panel ─────────────────────────────────────────────────── */
+.fire-days-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 9999;
+  width: 140px;
+  background: #1a1a2e;
+  border: 1px solid #0d6efd55;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+}
+
+.fire-days-dropdown-header {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4fc3f7;
+  background: #0d2040;
+  border-bottom: 1px solid #1e3a5f;
+  text-align: center;
+}
+
+/* Calendar date input inside dropdown */
+.fire-days-date-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 6px;
+  border-radius: 4px;
+  border: 1px solid #1e4a7a;
+  background: #0a1a30;
+  color: #90caf9;
+  font-size: 12px;
+  color-scheme: dark;
+  cursor: pointer;
+  outline: none;
+}
+.fire-days-date-input:focus {
+  border-color: #4fc3f7;
+}
+
+body[data-theme="light"] .fire-days-date-input {
+  background: #ffffff !important;
+  color: #1a3a5c !important;
+  border-color: #b3d4f0 !important;
+  color-scheme: light !important;
+}
+body[data-theme="light"] .fire-days-date-input:focus {
+  border-color: #0077cc !important;
+}
+
+
+.fire-days-dropdown-list {
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+.fire-days-dropdown-list::-webkit-scrollbar {
+  width: 4px;
+}
+.fire-days-dropdown-list::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 2px;
+}
+
+.fire-days-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 7px 14px;
+  background: transparent;
+  border: none;
+  color: #90caf9;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.fire-days-dropdown-item:hover {
+  background: #1e3a5f;
+  color: #fff;
+}
+
+.fire-days-dropdown-item.active {
+  background: #0d6efd22;
+  color: #4fc3f7;
+  font-weight: 700;
+}
+
+/* WEEK / 2 WEEKS special labels */
+.fire-days-dropdown-item.special {
+  color: #29b6f6;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-top: 1px solid #1e3a5f;
+  border-bottom: 1px solid #1e3a5f;
+  margin: 2px 0;
+}
+
+/* Light mode */
+body[data-theme="light"] .fire-days-dropdown {
+  background: #ffffff !important;
+  border-color: #0077cc55 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+body[data-theme="light"] .fire-days-dropdown-header {
+  background: #f0f6ff !important;
+  color: #0077cc !important;
+  border-bottom-color: #b3d4f0 !important;
+}
+body[data-theme="light"] .fire-days-dropdown-item {
+  color: #1a5276 !important;
+}
+body[data-theme="light"] .fire-days-dropdown-item:hover {
+  background: #e3f2fd !important;
+  color: #0077cc !important;
+}
+body[data-theme="light"] .fire-days-dropdown-item.active {
+  background: #cce5ff !important;
+  color: #004a99 !important;
+}
+body[data-theme="light"] .fire-days-dropdown-item.special {
+  color: #0077cc !important;
+  border-color: #b3d4f0 !important;
+}
+
+

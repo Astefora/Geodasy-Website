@@ -199,4 +199,5 @@ function EthiopiaMask({ paneNames = [] }) {
   return null;
 }
 
+export { fetchEthiopiaFeature };
 export default EthiopiaMask;

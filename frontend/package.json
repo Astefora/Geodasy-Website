@@ -10,6 +10,7 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.13.5",
     "chart.js": "^4.5.1",
+    "d3-contour": "^4.0.2",
     "emailjs-com": "^3.2.0",
     "leaflet": "^1.9.4",
     "papaparse": "^5.5.3",
@@ -21,6 +22,7 @@
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.13.0",
     "react-scripts": "5.0.1",
+    "simplex-noise": "^4.0.3",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -46,5 +48,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17"
   }
 }

@@ -189,8 +189,15 @@ app.get("/api/health", (_req, res) =>
 // ── POST /api/register — register a new user (pending approval) ───────────
 app.post("/api/register", async (req, res) => {
   try {
-    const { username, email, password, fullName, designation, department } =
-      req.body;
+    const {
+      username,
+      email,
+      password,
+      fullName,
+      designation,
+      department,
+      phone,
+    } = req.body;
     if (!username || !email || !password || !fullName) {
       return res
         .status(400)
@@ -214,6 +221,7 @@ app.post("/api/register", async (req, res) => {
       email: email.toLowerCase(),
       password,
       fullName,
+      phone: phone || "",
       designation: designation || "",
       department: department || "",
       status: "pending",
@@ -328,6 +336,60 @@ app.put("/api/users/:id/reject", async (req, res) => {
     res.json({ message: "User rejected.", user });
   } catch (err) {
     res.status(500).json({ error: "Rejection failed." });
+  }
+});
+
+// ── PUT /api/users/:id — update user profile (self-edit) ─────────────────
+app.put("/api/users/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid user ID format." });
+    }
+    const allowed = ["fullName", "phone", "designation", "department"];
+    const updates = {};
+    allowed.forEach((k) => {
+      if (req.body[k] !== undefined) updates[k] = req.body[k];
+    });
+    const user = await User.findByIdAndUpdate(id, updates, {
+      new: true,
+    }).select("-password");
+    if (!user) return res.status(404).json({ error: "User not found." });
+    console.log(`[server] User profile updated: ${user.email}`);
+    res.json({ message: "Profile updated.", user });
+  } catch (err) {
+    console.error("[server] PUT /api/users/:id error:", err.message);
+    res.status(500).json({ error: "Could not update profile." });
+  }
+});
+
+// ── DELETE /api/users/:id — permanently remove a user ────────────────────
+app.delete("/api/users/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId format before hitting MongoDB
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid user ID format." });
+    }
+
+    // Fetch first so we can guard against deleting admins
+    const target = await User.findById(id).lean();
+    if (!target) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    if (target.role === "admin") {
+      return res
+        .status(403)
+        .json({ error: "Admin accounts cannot be removed." });
+    }
+
+    await User.deleteOne({ _id: new mongoose.Types.ObjectId(id) });
+    console.log(`[server] User deleted: ${target.email}`);
+    res.json({ message: "User removed successfully." });
+  } catch (err) {
+    console.error("[server] DELETE /api/users/:id error:", err.message);
+    res.status(500).json({ error: "Could not delete user." });
   }
 });
 
@@ -677,8 +739,10 @@ function fetchCometPage(targetUrl, clientRes) {
     new URL(targetUrl),
     {
       headers: {
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
     },
     (cometRes) => {
@@ -689,7 +753,10 @@ function fetchCometPage(targetUrl, clientRes) {
         let redirectUrl = cometRes.headers.location;
         if (redirectUrl.startsWith("/")) {
           redirectUrl = `https://comet.nerc.ac.uk${redirectUrl}`;
-        } else if (!redirectUrl.startsWith("http://") && !redirectUrl.startsWith("https://")) {
+        } else if (
+          !redirectUrl.startsWith("http://") &&
+          !redirectUrl.startsWith("https://")
+        ) {
           redirectUrl = `https://comet.nerc.ac.uk/${redirectUrl}`;
         }
         console.log(`[server] HTML proxy redirecting to: ${redirectUrl}`);
@@ -707,7 +774,10 @@ function fetchCometPage(targetUrl, clientRes) {
         if (contentType.includes("text/html")) {
           let html = Buffer.concat(chunks).toString("utf8");
           // Replace comet-volcanodb.org with our proxy route
-          html = html.replace(/https:\/\/comet-volcanodb\.org/g, "/api/comet-db-proxy");
+          html = html.replace(
+            /https:\/\/comet-volcanodb\.org/g,
+            "/api/comet-db-proxy",
+          );
 
           // Inject custom css to isolate the two plots side-by-side and style them dark
           const customCss = `
@@ -882,13 +952,15 @@ function fetchCometPage(targetUrl, clientRes) {
           clientRes.status(cometRes.statusCode).send(Buffer.concat(chunks));
         }
       });
-    }
+    },
   );
 
   request.on("error", (err) => {
     console.log(`[server] HTML proxy error: ${err.message}`);
     if (!clientRes.headersSent) {
-      clientRes.status(502).json({ error: "Proxy request failed", detail: err.message });
+      clientRes
+        .status(502)
+        .json({ error: "Proxy request failed", detail: err.message });
     }
   });
 
@@ -920,7 +992,8 @@ app.get("/api/comet-db-proxy/*", (req, res) => {
     targetUrl,
     {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
     },
     (cometRes) => {
@@ -931,13 +1004,15 @@ app.get("/api/comet-db-proxy/*", (req, res) => {
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.status(cometRes.statusCode);
       cometRes.pipe(res);
-    }
+    },
   );
 
   request.on("error", (err) => {
     console.log(`[server] COMET DB proxy error: ${err.message}`);
     if (!res.headersSent) {
-      res.status(502).json({ error: "Proxy request failed", detail: err.message });
+      res
+        .status(502)
+        .json({ error: "Proxy request failed", detail: err.message });
     }
   });
 

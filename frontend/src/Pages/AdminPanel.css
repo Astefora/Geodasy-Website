@@ -35,7 +35,7 @@
 }
 
 .logout-btn:hover {
-  background: #c82333;
+  background: #910715;
 }
 
 .admin-tabs {
@@ -328,4 +328,82 @@ body[data-theme="dark"] .upload-status.rejected {
 
 body[data-theme="dark"] h2 {
   color: #00aaff;
+}
+
+/* ── Admin stat card icon box colors — must beat theme.css overrides ───────── */
+.admin-icon-amber,
+.admin-icon-amber[style],
+body[data-theme="light"] .admin-icon-amber,
+body[data-theme="dark"] .admin-icon-amber {
+  background-color: #f59e0b !important;
+}
+
+.admin-icon-emerald,
+.admin-icon-emerald[style],
+body[data-theme="light"] .admin-icon-emerald,
+body[data-theme="dark"] .admin-icon-emerald {
+  background-color: #10b981 !important;
+}
+
+.admin-icon-blue,
+.admin-icon-blue[style],
+body[data-theme="light"] .admin-icon-blue,
+body[data-theme="dark"] .admin-icon-blue {
+  background-color: #1f4fd8 !important;
+}
+
+.admin-icon-cyan,
+.admin-icon-cyan[style],
+body[data-theme="light"] .admin-icon-cyan,
+body[data-theme="dark"] .admin-icon-cyan {
+  background-color: #06b6d4 !important;
+}
+
+/* Icon inside the box is always white */
+.admin-icon-amber svg,
+.admin-icon-emerald svg,
+.admin-icon-blue svg,
+.admin-icon-cyan svg {
+  color: #ffffff !important;
+}
+
+/* Badge backgrounds stay as inline styles — protect them from blanket resets */
+body[data-theme="light"] .admin-stat-badge {
+  background-color: revert !important;
+}
+
+/* ── Admin tab buttons — inactive text color for both themes ──────────────── */
+body[data-theme="light"] .admin-tab-inactive {
+  color: #4b5563 !important; /* gray-600, visible on white */
+}
+body[data-theme="dark"] .admin-tab-inactive {
+  color: #d1d5db !important; /* gray-300, visible on dark */
+}
+body[data-theme="light"] .admin-tab-inactive:hover {
+  color: #111827 !important;
+  background-color: #e5e7eb !important;
+}
+body[data-theme="dark"] .admin-tab-inactive:hover {
+  color: #ffffff !important;
+  background-color: #374151 !important;
+}
+body[data-theme="light"] .admin-tab-active,
+body[data-theme="dark"] .admin-tab-active {
+  color: #ffffff !important;
+}
+
+/* ── Active tab: beat theme.css [style*="color: rgb(255, 255, 255)"] !important ── */
+/* These selectors are more specific than the attribute selector in theme.css */
+body[data-theme="light"] button.admin-tab-active,
+body[data-theme="light"] button.admin-tab-active[style],
+body[data-theme="light"] button.admin-tab-active *,
+body[data-theme="light"] .admin-tab-active svg {
+  color: #ffffff !important;
+}
+
+/* ── Geoportal nav button text — force white in light mode ─────────────────── */
+body[data-theme="light"] span.geoportal-text,
+body[data-theme="light"] .geoportal-btn span,
+body[data-theme="light"] .geoportal-btn .geoportal-text {
+  color: #ffffff !important;
 }

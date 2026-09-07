@@ -117,13 +117,37 @@ function Footer() {
           </h4>
           <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
             {[
-              { label: "🌋 Volcano", to: "/hazards/volcano" },
-              { label: "🌍 Earthquake", to: "/hazards/earthquake" },
-              { label: "🔥 Fire", to: "/hazards/fire" },
-              { label: "🌊 Flood", to: "/hazards/flood" },
-              { label: "⛰️ Landslide", to: "/hazards/landslide" },
-              { label: "☀️ Drought", to: "/hazards/drought" },
-            ].map(({ label, to }) => (
+              {
+                label: "Volcano",
+                to: "/hazards/volcano",
+                img: "/icons/icons8-volcano-48.png",
+              },
+              {
+                label: "Earthquake",
+                to: "/hazards/earthquake",
+                img: "/icons/icons8-earthquake-100.png",
+              },
+              {
+                label: "Fire",
+                to: "/hazards/fire",
+                img: "/icons/icons8-fire-48.png",
+              },
+              {
+                label: "Flood",
+                to: "/hazards/flood",
+                img: "/icons/icons8-flood-64.png",
+              },
+              {
+                label: "Landslide",
+                to: "/hazards/landslide",
+                img: "/icons/icons8-landslide-100.png",
+              },
+              {
+                label: "Drought",
+                to: "/hazards/drought",
+                img: "/icons/icons8-drought-32.png",
+              },
+            ].map(({ label, to, img }) => (
               <Link
                 key={label}
                 to={to}
@@ -132,12 +156,22 @@ function Footer() {
                   textDecoration: "none",
                   fontSize: "13px",
                   transition: "color 0.2s",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "#f28c28")}
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.color = "var(--text-muted)")
                 }
               >
+                <img
+                  src={img}
+                  alt={label}
+                  width={16}
+                  height={16}
+                  style={{ objectFit: "contain" }}
+                />
                 {label}
               </Link>
             ))}

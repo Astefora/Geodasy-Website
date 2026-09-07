@@ -1,38 +1,90 @@
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 30px;
-  background-color: #004080;
-  color: #fff;
-  position: fixed;
-  width: 100%;
-  top: 0;
-  z-index: 1000;
+/* ═══════════════════════════════════════════════════════════════════════
+   Header.css — navbar glass + geoportal + responsive rules
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Geoportal button — always white text ──────────────────────────────── */
+.geoportal-btn,
+.geoportal-btn span,
+.geoportal-btn svg,
+a.geoportal-btn {
+  color: #ffffff !important;
 }
 
-.logo-title {
-  display: flex;
-  align-items: center;
+body[data-theme="light"] .geoportal-btn,
+body[data-theme="light"] .geoportal-btn span,
+body[data-theme="light"] .geoportal-btn svg,
+body[data-theme="light"] a.geoportal-btn {
+  color: #ffffff !important;
 }
 
-.logo {
-  width: 100px;
-  margin-right: 20px;
+/* ── Navbar glass background ───────────────────────────────────────────
+   Must beat theme.css selectors. Use very high specificity.
+   Dark: 65% opacity — content clearly readable, terrain visible behind
+   Light: 72% opacity — same
+   Scrolled: slightly more opaque for readability
+   ─────────────────────────────────────────────────────────────────────── */
+html body .nav-glass {
+  background-color: rgba(3, 7, 18, 0.88) !important;
+}
+html body .nav-glass.nav-scrolled {
+  background-color: rgba(3, 7, 18, 0.92) !important;
+}
+html body[data-theme="light"] .nav-glass {
+  background-color: rgba(249, 250, 251, 0.9) !important;
+}
+html body[data-theme="light"] .nav-glass.nav-scrolled {
+  background-color: rgba(249, 250, 251, 0.96) !important;
 }
 
-.department-title {
-  font-size: 20px;
-  font-weight: bold;
+/* ── Light mode: colorful box-shadow border ────────────────────────────── */
+body[data-theme="light"] .nav-glass {
+  box-shadow:
+    0 0 0 1.5px rgba(31, 79, 216, 0.35),
+    0 4px 24px rgba(31, 79, 216, 0.08) !important;
+  border-color: transparent !important;
+}
+body[data-theme="light"] .nav-glass.nav-scrolled {
+  box-shadow:
+    0 0 0 1.5px rgba(31, 79, 216, 0.45),
+    0 8px 32px rgba(31, 79, 216, 0.12) !important;
+  border-color: transparent !important;
 }
 
-.nav-links a {
-  margin-left: 25px;
-  color: #fff;
-  text-decoration: none;
-  font-weight: 500;
+/* ── Desktop: show pill nav, hide hamburger ────────────────────────────── */
+.header-desktop-nav {
+  display: flex !important;
+}
+.header-hamburger {
+  display: none !important;
 }
 
-.nav-links a:hover {
-  color: #FFD700;
+/* ── Tablet (≤900px) ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .header-title {
+    font-size: 14px !important;
+    max-width: 180px;
+  }
+}
+
+/* ── Mobile (≤768px) ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .header-desktop-nav {
+    display: none !important;
+  }
+  .header-hamburger {
+    display: flex !important;
+  }
+  .header-title {
+    display: none !important;
+  }
+  .geoportal-hide-mobile {
+    display: none !important;
+  }
+}
+
+/* ── Very small (≤480px) ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .geoportal-btn {
+    padding: 7px 10px !important;
+  }
 }
