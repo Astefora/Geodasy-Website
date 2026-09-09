@@ -11,8 +11,6 @@ import {
   FiX,
   FiArrowLeft,
   FiLogOut,
-  FiCheckCircle,
-  FiAlertCircle,
   FiUser,
   FiShield,
   FiClock,
@@ -50,38 +48,34 @@ function Toast({ message, type, onClose }) {
 function EditModal({ user, onSave, onClose, saving }) {
   const [draft, setDraft] = useState({
     fullName: user.fullName || "",
-    phone: user.phone || "",
     designation: user.designation || "",
     department: user.department || "",
   });
-  const fields = [
-    {
-      key: "fullName",
-      label: "Full Name",
-      icon: FiUser,
-      placeholder: "Your full name",
-    },
-    {
-      key: "phone",
-      label: "Phone",
-      icon: FiPhone,
-      placeholder: "+251 9__ __ __ __",
-    },
-    {
-      key: "designation",
-      label: "Designation",
-      icon: FiBriefcase,
-      placeholder: "e.g. Research Officer",
-    },
-    {
-      key: "department",
-      label: "Department",
-      icon: FiGrid,
-      placeholder: "e.g. Geodesy & Geodynamics",
-    },
-  ];
+
+  // Extract the 9-digit part from the stored +251XXXXXXXXX value
+  const initDigits = (user.phone || "")
+    .replace(/^\+251/, "")
+    .replace(/\s/g, "");
+  const [phoneDigits, setPhoneDigits] = useState(
+    /^\d{9}$/.test(initDigits) ? initDigits : "",
+  );
+  const [phoneError, setPhoneError] = useState("");
+
+  const handleSaveClick = () => {
+    // Validate phone — required, exactly 9 digits
+    if (!/^\d{9}$/.test(phoneDigits)) {
+      setPhoneError(
+        phoneDigits === ""
+          ? "Phone number is required"
+          : "Enter exactly 9 digits after +251",
+      );
+      return;
+    }
+    onSave({ ...draft, phone: "+251" + phoneDigits });
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9600] flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
@@ -98,24 +92,117 @@ function EditModal({ user, onSave, onClose, saving }) {
             <FiX size={16} />
           </button>
         </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {fields.map(({ key, label, icon: Icon, placeholder }) => (
-            <div key={key} className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
-                <Icon size={11} />
-                {label}
-              </label>
+          {/* Full Name */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+              <FiUser size={11} /> Full Name
+            </label>
+            <input
+              value={draft.fullName}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, fullName: e.target.value }))
+              }
+              placeholder="Your full name"
+              className="px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+            />
+          </div>
+
+          {/* Ethiopian phone field */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+              <FiPhone size={11} /> Phone
+            </label>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                borderRadius: "12px",
+                border: phoneError ? "1.5px solid #ef4444" : "1px solid",
+                borderColor: phoneError ? "#ef4444" : undefined,
+                overflow: "hidden",
+                height: "40px",
+                boxSizing: "border-box",
+              }}
+              className={
+                phoneError
+                  ? ""
+                  : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+              }
+            >
+              {/* Fixed +251 prefix */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "0 8px 0 12px",
+                  borderRight: "1px solid",
+                  height: "100%",
+                  flexShrink: 0,
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#6366f1",
+                  userSelect: "none",
+                }}
+                className="border-gray-200 dark:border-gray-700"
+              >
+                <FiPhone size={12} style={{ color: "#9ca3af" }} />
+                +251
+              </div>
+              {/* 9-digit input */}
               <input
-                value={draft[key]}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, [key]: e.target.value }))
-                }
-                placeholder={placeholder}
-                className="px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                type="tel"
+                inputMode="numeric"
+                value={phoneDigits}
+                placeholder="9 digits"
+                maxLength={9}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+                  setPhoneDigits(digits);
+                  if (phoneError) setPhoneError("");
+                }}
+                className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white text-sm px-3 h-full min-w-0"
               />
             </div>
-          ))}
+            {phoneError && (
+              <p className="text-xs text-red-500 font-medium">⚠ {phoneError}</p>
+            )}
+          </div>
+
+          {/* Designation */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+              <FiBriefcase size={11} /> Designation
+            </label>
+            <input
+              value={draft.designation}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, designation: e.target.value }))
+              }
+              placeholder="e.g. Research Officer"
+              className="px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+            />
+          </div>
+
+          {/* Department */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+              <FiGrid size={11} /> Department
+            </label>
+            <input
+              value={draft.department}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, department: e.target.value }))
+              }
+              placeholder="e.g. Geodesy & Geodynamics"
+              className="px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+            />
+          </div>
         </div>
+
+        {/* Read-only fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-800">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
@@ -130,6 +217,7 @@ function EditModal({ user, onSave, onClose, saving }) {
             <span className="text-sm text-gray-400">@{user.username}</span>
           </div>
         </div>
+
         <div className="flex justify-end gap-3 pt-1">
           <button
             onClick={onClose}
@@ -138,7 +226,7 @@ function EditModal({ user, onSave, onClose, saving }) {
             Cancel
           </button>
           <button
-            onClick={() => onSave(draft)}
+            onClick={handleSaveClick}
             disabled={saving}
             className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-60 flex items-center gap-2"
           >

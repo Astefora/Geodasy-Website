@@ -238,10 +238,13 @@ app.get("/api/me", (req, res) => {
       username: u.username,
       email: u.email,
       fullName: u.fullName,
+      phone: u.phone || "",
       role: u.role,
       designation: u.designation,
       department: u.department,
       status: u.status,
+      approvedBy: u.approvedBy || null,
+      approvedAt: u.approvedAt || null,
     },
   });
 });
@@ -573,10 +576,13 @@ app.post("/api/login", async (req, res) => {
         username: user.username,
         email: user.email,
         fullName: user.fullName,
+        phone: user.phone || "",
         role: user.role,
         designation: user.designation,
         department: user.department,
         status: user.status,
+        approvedBy: user.approvedBy || null,
+        approvedAt: user.approvedAt || null,
       },
     });
   } catch (err) {
