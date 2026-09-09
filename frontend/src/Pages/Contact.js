@@ -21,20 +21,24 @@ import {
 const API = "http://localhost:5002";
 
 function Toast({ message, type, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 3500);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  const isSuccess = type === "success";
   return (
     <div
-      className={`fixed bottom-7 right-7 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold
-      ${
-        type === "success"
+      style={{ position: "fixed", top: "88px", right: "24px", zIndex: 9500 }}
+      className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold transition-all ${
+        isSuccess
           ? "bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300"
           : "bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300"
       }`}
     >
-      {type === "success" ? (
-        <FiCheckCircle size={16} />
-      ) : (
-        <FiAlertCircle size={16} />
-      )}
+      <span
+        className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isSuccess ? "bg-green-500" : "bg-red-500"}`}
+      />
       {message}
       <button onClick={onClose} className="ml-2 opacity-60 hover:opacity-100">
         <FiX size={13} />

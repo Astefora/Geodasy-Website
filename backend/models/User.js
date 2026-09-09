@@ -29,6 +29,13 @@ const userSchema = new mongoose.Schema(
     },
     approvedBy: { type: String, default: null },
     approvedAt: { type: Date, default: null },
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
+
+    // ── Email verification ─────────────────────────────────────────────────
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerifyToken: { type: String, default: null },
+    emailVerifyExpires: { type: Date, default: null },
   },
   { timestamps: true },
 );

@@ -88,29 +88,27 @@ function Toast({ message, type, onClose }) {
     const t = setTimeout(onClose, 3500);
     return () => clearTimeout(t);
   }, [onClose]);
+
+  const isSuccess = type === "success";
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-semibold border"
-      style={
-        type === "success"
-          ? {
-              backgroundColor: "#022c22",
-              borderColor: "#059669",
-              color: "#6ee7b7",
-            }
-          : {
-              backgroundColor: "#2d0a0a",
-              borderColor: "#dc2626",
-              color: "#fca5a5",
-            }
-      }
+      style={{ position: "fixed", top: "88px", right: "24px", zIndex: 9500 }}
+      className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold transition-all ${
+        isSuccess
+          ? "bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300"
+          : "bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300"
+      }`}
     >
-      {type === "success" ? (
-        <FiCheckCircle size={17} />
-      ) : (
-        <FiAlertCircle size={17} />
-      )}
+      <span
+        className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isSuccess ? "bg-green-500" : "bg-red-500"}`}
+      />
       {message}
+      <button
+        onClick={onClose}
+        className="ml-2 opacity-60 hover:opacity-100 transition-opacity text-base leading-none"
+      >
+        <FiX size={14} />
+      </button>
     </div>
   );
 }
@@ -768,7 +766,11 @@ function AdminPanel() {
     );
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Revoke the Remember Me token from the database and clear the cookie
+    try {
+      await fetch("/api/logout", { method: "POST", credentials: "include" });
+    } catch {}
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("currentUser");
     navigate("/");

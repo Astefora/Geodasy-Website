@@ -27,12 +27,12 @@ function Toast({ message, type, onClose }) {
   const isSuccess = type === "success";
   return (
     <div
-      className={`fixed bottom-7 right-7 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold transition-all animate-fade-in
-        ${
-          isSuccess
-            ? "bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300"
-            : "bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300"
-        }`}
+      style={{ position: "fixed", top: "88px", right: "24px", zIndex: 9500 }}
+      className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold transition-all ${
+        isSuccess
+          ? "bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300"
+          : "bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300"
+      }`}
     >
       <span
         className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isSuccess ? "bg-green-500" : "bg-red-500"}`}
@@ -1886,7 +1886,11 @@ function Dashboard() {
     }
   }, [navigate]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Revoke the Remember Me token from the database and clear the cookie
+    try {
+      await fetch("/api/logout", { method: "POST", credentials: "include" });
+    } catch {}
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("currentUser");
     navigate("/");

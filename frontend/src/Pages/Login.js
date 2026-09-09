@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FiUser, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 
@@ -11,28 +11,52 @@ function Login() {
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState(""); // tracks special error codes
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  // ── Auto-restore session from Remember Me cookie on page load ─────────────
+  // If the user has a valid persistent cookie the backend middleware will
+  // respond to /api/me with their profile — log them straight in.
+  useEffect(() => {
+    // Skip if already authenticated via localStorage
+    if (localStorage.getItem("isAuthenticated")) return;
+    fetch("/api/me", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          localStorage.setItem("isAuthenticated", "true");
+          localStorage.setItem("currentUser", JSON.stringify(data.user));
+          if (data.user.role === "admin") navigate("/admin");
+          else navigate("/dashboard");
+        }
+      })
+      .catch(() => {}); // silently ignore — cookie just isn't present
+  }, [navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setErrorCode("");
     setLoading(true);
     try {
       const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // needed to receive the Set-Cookie header
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
+          rememberMe: remember, // send the checkbox state to the backend
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Login failed");
+        setErrorCode(data.code || "");
         setLoading(false);
         return;
       }
@@ -186,7 +210,7 @@ function Login() {
                 Remember me
               </label>
               <Link
-                to="#"
+                to="/forgot-password"
                 style={{
                   color: BRAND,
                   textDecoration: "none",
@@ -217,13 +241,28 @@ function Login() {
                 style={{
                   background: "#ffebee",
                   color: "#c62828",
-                  padding: "10px",
+                  padding: "10px 12px",
                   borderRadius: "8px",
                   fontSize: "13px",
                   textAlign: "center",
                 }}
               >
                 {error}
+                {/* If email not verified, show direct link to resend page */}
+                {errorCode === "EMAIL_NOT_VERIFIED" && (
+                  <div style={{ marginTop: "6px" }}>
+                    <Link
+                      to="/verify-email"
+                      style={{
+                        color: BRAND,
+                        fontWeight: 600,
+                        fontSize: "12px",
+                      }}
+                    >
+                      Resend verification email →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

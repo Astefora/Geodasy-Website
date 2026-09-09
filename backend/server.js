@@ -24,10 +24,18 @@ const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
 const https = require("https");
+const crypto = require("crypto"); // for email verification tokens
+const cookieParser = require("cookie-parser"); // for Remember Me cookies
 require("dotenv").config();
 
 const Upload = require("./models/Upload");
 const User = require("./models/User");
+const RememberToken = require("./models/RememberToken");
+const {
+  rememberMeMiddleware,
+  issueRememberToken,
+  revokeRememberToken,
+} = require("./middleware/rememberMe");
 
 // ── App setup ──────────────────────────────────────────────────────────────
 const app = express();
@@ -39,11 +47,21 @@ app.use(
     origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // required for Set-Cookie / Remember Me to work
   }),
 );
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ── Cookie parser (required for Remember Me) ───────────────────────────────
+app.use(cookieParser());
+
+// ── Remember Me middleware — restores session from persistent cookie ────────
+// Runs before all routes. If a valid rememberToken cookie exists and no
+// session is active, it validates the token, attaches req.user, and rotates
+// the token automatically.
+app.use(rememberMeMiddleware);
 
 // ── Upload directory setup ─────────────────────────────────────────────────
 const UPLOAD_DIR = path.join(__dirname, "uploads");
@@ -146,9 +164,19 @@ mongoose
         designation: "Administrator",
         department: "Geodesy & Geodynamics",
         status: "approved",
+        isEmailVerified: true, // seeded accounts skip the email verification flow
       });
       console.log(
         "[server] Admin account seeded: admin@geodesy.et / Admin@1234",
+      );
+    } else if (!existingAdmin.isEmailVerified) {
+      // Fix existing admin records that predate the isEmailVerified field
+      await User.updateOne(
+        { _id: existingAdmin._id },
+        { isEmailVerified: true },
+      );
+      console.log(
+        "[server] Admin account patched: isEmailVerified set to true",
       );
     }
 
@@ -164,8 +192,29 @@ mongoose
         designation: "Research Officer",
         department: "Geodesy & Geodynamics",
         status: "approved",
+        isEmailVerified: true, // seeded accounts skip the email verification flow
       });
       console.log("[server] Demo LEO member seeded: leo@geodesy.et / Leo@1234");
+    } else if (!existingLeo.isEmailVerified) {
+      // Fix existing demo member records that predate the isEmailVerified field
+      await User.updateOne({ _id: existingLeo._id }, { isEmailVerified: true });
+      console.log(
+        "[server] Demo LEO member patched: isEmailVerified set to true",
+      );
+    }
+
+    // ── One-time migration: mark all approved users as email-verified ──────
+    // Users created before the isEmailVerified field existed have null/undefined
+    // for this field. They are already approved so they clearly verified their
+    // identity. Patch them so they can log in without being blocked.
+    const patchResult = await User.updateMany(
+      { isEmailVerified: { $ne: true } },
+      { $set: { isEmailVerified: true } },
+    );
+    if (patchResult.modifiedCount > 0) {
+      console.log(
+        `[server] Migration: set isEmailVerified=true on ${patchResult.modifiedCount} existing user(s)`,
+      );
     }
   })
   .catch((err) => {
@@ -173,6 +222,29 @@ mongoose
     console.error("[server] Make sure MongoDB is running (mongod or Compass)");
     process.exit(1);
   });
+
+// ── GET /api/me — return current user from Remember Me cookie ─────────────
+// The rememberMeMiddleware runs before this route and populates req.user
+// if a valid persistent cookie exists. The frontend calls this on app load
+// to restore the session without requiring a full re-login.
+app.get("/api/me", (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated." });
+  }
+  const u = req.user;
+  res.json({
+    user: {
+      id: u._id,
+      username: u.username,
+      email: u.email,
+      fullName: u.fullName,
+      role: u.role,
+      designation: u.designation,
+      department: u.department,
+      status: u.status,
+    },
+  });
+});
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/", (_req, res) =>
@@ -198,12 +270,31 @@ app.post("/api/register", async (req, res) => {
       department,
       phone,
     } = req.body;
+
     if (!username || !email || !password || !fullName) {
       return res
         .status(400)
         .json({ error: "All required fields must be filled." });
     }
 
+    // ── Phone validation (Ethiopian format: +251 + exactly 9 digits) ──────
+    // Phone is now required.
+    if (!phone || phone.trim() === "") {
+      return res.status(400).json({
+        error: "Phone number is required.",
+        code: "INVALID_PHONE",
+      });
+    }
+    const phoneDigits = phone.replace(/^\+251/, "").replace(/\s/g, "");
+    if (!/^\d{9}$/.test(phoneDigits)) {
+      return res.status(400).json({
+        error:
+          "Phone number must be exactly 9 digits after +251 (e.g. +251912345678).",
+        code: "INVALID_PHONE",
+      });
+    }
+
+    // ── Duplicate check ────────────────────────────────────────────────────
     const existing = await User.findOne({
       $or: [
         { email: email.toLowerCase() },
@@ -216,26 +307,60 @@ app.post("/api/register", async (req, res) => {
         .json({ error: "User with this email or username already exists." });
     }
 
+    // ── Generate a secure email verification token ─────────────────────────
+    const emailVerifyToken = crypto.randomBytes(32).toString("hex");
+    const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // ── Save user to database ──────────────────────────────────────────────
+    // Normalise phone: store as +251XXXXXXXXX or empty string
+    const normalizedPhone =
+      phone && phone.trim()
+        ? "+251" + phone.replace(/^\+251/, "").replace(/\s/g, "")
+        : "";
+
     const user = await User.create({
       username: username.toLowerCase(),
       email: email.toLowerCase(),
       password,
       fullName,
-      phone: phone || "",
+      phone: normalizedPhone,
       designation: designation || "",
       department: department || "",
       status: "pending",
       role: "member",
+      isEmailVerified: false,
+      emailVerifyToken,
+      emailVerifyExpires,
     });
 
     console.log(`[server] New user registered (pending): ${user.email}`);
+
+    // ── Send verification email ────────────────────────────────────────────
+    const APP_URL = process.env.APP_URL || "http://localhost:3000";
+    const verifyURL = `${APP_URL}/verify-email?token=${emailVerifyToken}&id=${user._id}`;
+
+    try {
+      await emailTransporter.sendMail({
+        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+        to: user.email,
+        subject: "📧 Verify your email — Geodesy & Geodynamics",
+        html: buildVerifyEmailHtml(user.fullName || user.username, verifyURL),
+      });
+      console.log(`[server] Verification email sent to ${user.email}`);
+    } catch (mailErr) {
+      // Non-fatal: user is saved, email delivery failed. User can resend.
+      console.error("[server] Verification email FAILED:", mailErr.message);
+    }
+
     res.status(201).json({
-      message: "Registration successful. Pending admin approval.",
+      message:
+        "Registration successful! Please check your email to verify your account, then wait for admin approval.",
       user: {
         id: user._id,
         email: user.email,
         fullName: user.fullName,
         status: user.status,
+        isEmailVerified: user.isEmailVerified,
       },
     });
   } catch (err) {
@@ -244,10 +369,163 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
+// ── GET /api/verify-email — verify a user's email address ─────────────────
+// The link in the email hits this endpoint with ?token=...&id=...
+app.get("/api/verify-email", async (req, res) => {
+  const { token, id } = req.query;
+
+  if (!token || !id) {
+    return res.status(400).json({ error: "Invalid verification link." });
+  }
+
+  try {
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(400).json({ error: "Invalid verification link." });
+    }
+
+    // Already verified — just redirect so clicking the link twice works gracefully
+    if (user.isEmailVerified) {
+      const APP_URL = process.env.APP_URL || "http://localhost:3000";
+      return res.redirect(`${APP_URL}/verify-email?status=already`);
+    }
+
+    // Check token match
+    if (user.emailVerifyToken !== token) {
+      return res.status(400).json({ error: "Invalid verification token." });
+    }
+
+    // Check expiry
+    if (user.emailVerifyExpires < new Date()) {
+      return res.status(400).json({
+        error:
+          "Verification link has expired. Please register again or contact support.",
+      });
+    }
+
+    // ── Mark email as verified ─────────────────────────────────────────────
+    user.isEmailVerified = true;
+    user.emailVerifyToken = null;
+    user.emailVerifyExpires = null;
+    await user.save();
+
+    console.log(`[server] Email verified: ${user.email}`);
+
+    // ── Notify admin that a new user is ready for approval ────────────────
+    // This fires AFTER verification so the admin only sees legitimate,
+    // confirmed email addresses in their pending queue.
+    try {
+      const admin = await User.findOne({ role: "admin" }).select(
+        "email fullName",
+      );
+      if (admin && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        const APP_URL = process.env.APP_URL || "http://localhost:3000";
+        await emailTransporter.sendMail({
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+          to: admin.email,
+          subject: "🔔 New user awaiting approval — Geodesy & Geodynamics",
+          html: `
+          <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;
+                      padding:24px;border:1px solid #e0e0e0;border-radius:12px;">
+            <h2 style="color:#3949ab;margin:0 0 12px;">New Member Registration</h2>
+            <p>A new user has verified their email and is awaiting your approval:</p>
+            <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+              <tr>
+                <td style="padding:6px 0;color:#666;font-size:13px;width:110px;">Full Name</td>
+                <td style="padding:6px 0;font-size:13px;font-weight:600;">${user.fullName}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#666;font-size:13px;">Email</td>
+                <td style="padding:6px 0;font-size:13px;">${user.email}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#666;font-size:13px;">Designation</td>
+                <td style="padding:6px 0;font-size:13px;">${user.designation || "—"}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#666;font-size:13px;">Department</td>
+                <td style="padding:6px 0;font-size:13px;">${user.department || "—"}</td>
+              </tr>
+            </table>
+            <div style="text-align:center;margin:24px 0;">
+              <a href="${APP_URL}/admin"
+                 style="display:inline-block;padding:12px 28px;background:#3949ab;
+                        color:#fff;border-radius:8px;text-decoration:none;
+                        font-weight:700;font-size:14px;">
+                Review in Admin Panel
+              </a>
+            </div>
+            <p style="font-size:12px;color:#999;margin:0;">
+              — Geodesy &amp; Geodynamics Dashboard
+            </p>
+          </div>`,
+        });
+        console.log(
+          `[server] Admin notified about new verified user: ${user.email}`,
+        );
+      }
+    } catch (notifyErr) {
+      // Non-fatal — verification succeeded, admin email is just a bonus notification
+      console.error(
+        "[server] Admin notification email failed:",
+        notifyErr.message,
+      );
+    }
+
+    // Redirect to the frontend success page
+    const APP_URL = process.env.APP_URL || "http://localhost:3000";
+    res.redirect(`${APP_URL}/verify-email?status=success`);
+  } catch (err) {
+    console.error("[server] Email verify error:", err.message);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
+});
+
+// ── POST /api/resend-verification — resend the verification email ──────────
+app.post("/api/resend-verification", async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "Email is required." });
+
+  try {
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // Always return success to prevent email enumeration
+    if (!user || user.isEmailVerified) {
+      return res.json({
+        message: "If applicable, a new verification email has been sent.",
+      });
+    }
+
+    // Rotate the token and reset expiry
+    user.emailVerifyToken = crypto.randomBytes(32).toString("hex");
+    user.emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await user.save();
+
+    const APP_URL = process.env.APP_URL || "http://localhost:3000";
+    const verifyURL = `${APP_URL}/verify-email?token=${user.emailVerifyToken}&id=${user._id}`;
+
+    await emailTransporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: user.email,
+      subject: "📧 Verify your email — Geodesy & Geodynamics",
+      html: buildVerifyEmailHtml(user.fullName || user.username, verifyURL),
+    });
+
+    console.log(`[server] Resent verification email to ${user.email}`);
+    res.json({
+      message: "If applicable, a new verification email has been sent.",
+    });
+  } catch (err) {
+    console.error("[server] Resend verification error:", err.message);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
+});
+
 // ── POST /api/login — authenticate user ───────────────────────────────────
 app.post("/api/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
     if (!email || !password)
       return res.status(400).json({ error: "Email and password required." });
 
@@ -259,6 +537,17 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials." });
     }
 
+    // Block login if email is not yet verified.
+    // Admins are seeded internally and never go through the email verification
+    // flow, so we skip this check for them entirely.
+    if (user.role !== "admin" && !user.isEmailVerified) {
+      return res.status(403).json({
+        error:
+          "Please verify your email address before logging in. Check your inbox for the verification link.",
+        code: "EMAIL_NOT_VERIFIED",
+      });
+    }
+
     if (user.status === "pending") {
       return res
         .status(403)
@@ -266,6 +555,15 @@ app.post("/api/login", async (req, res) => {
     }
     if (user.status === "rejected") {
       return res.status(403).json({ error: "Your account has been rejected." });
+    }
+
+    // ── Remember Me — issue a persistent token ─────────────────────────────
+    // Only when the client explicitly requests it (checkbox was checked).
+    // The raw token goes to the client cookie; only the SHA-256 hash is
+    // persisted in MongoDB. Token rotation happens on every use via middleware.
+    if (rememberMe === true || rememberMe === "true") {
+      await issueRememberToken(res, user._id);
+      console.log(`[server] Remember Me token issued for ${user.email}`);
     }
 
     res.json({
@@ -287,12 +585,38 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+// ── POST /api/logout — clear session and revoke Remember Me token ──────────
+app.post("/api/logout", async (req, res) => {
+  try {
+    // Revoke the persistent token from MongoDB and clear the client cookie.
+    // This is always safe to call — it silently ignores missing cookies.
+    await revokeRememberToken(req, res);
+
+    console.log("[server] User logged out");
+    res.json({ message: "Logged out successfully." });
+  } catch (err) {
+    console.error("[server] Logout error:", err.message);
+    res.status(500).json({ error: "Logout failed." });
+  }
+});
+
 // ── GET /api/users — list users (admin only, filtered by status) ──────────
+// When fetching pending users for admin review, only show those who have
+// already verified their email. Unverified registrations are invisible
+// to admins until the user clicks their verification link.
 app.get("/api/users", async (req, res) => {
   try {
     const query = {};
     if (req.query.status) query.status = req.query.status;
     if (req.query.role) query.role = req.query.role;
+
+    // Hide email-unverified accounts from the admin pending queue.
+    // Only applies when fetching pending users — approved/rejected users
+    // have already passed verification so no need to filter them out.
+    if (req.query.status === "pending") {
+      query.isEmailVerified = true;
+    }
+
     const users = await User.find(query)
       .select("-password")
       .sort({ createdAt: -1 });
@@ -538,19 +862,126 @@ app.delete("/api/uploads/:id", async (req, res) => {
   }
 });
 
-// ── Email approval notification ────────────────────────────────────────────
-// POST /api/send-approval-email — sends approval email to a user
+// ── Email transporter — supports Gmail (default) or Resend SMTP ───────────
+// ─────────────────────────────────────────────────────────────────────────
+// To use Resend (recommended for production):
+//   EMAIL_HOST=smtp.resend.com
+//   EMAIL_PORT=465
+//   EMAIL_SECURE=true
+//   EMAIL_USER=resend                        ← always the literal string "resend"
+//   EMAIL_PASS=re_xxxxxxxxxxxxxxxxxxxx       ← your Resend API key
+//   EMAIL_FROM=Your Name <you@yourdomain.com>
+//
+// To use Gmail (dev/testing):
+//   EMAIL_HOST=smtp.gmail.com
+//   EMAIL_PORT=587
+//   EMAIL_SECURE=false
+//   EMAIL_USER=you@gmail.com
+//   EMAIL_PASS=your-gmail-app-password       ← from myaccount.google.com/apppasswords
+// ─────────────────────────────────────────────────────────────────────────
 const nodemailer = require("nodemailer");
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET || "geod_reset_secret_key";
 
 const emailTransporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || "smtp.gmail.com",
   port: parseInt(process.env.EMAIL_PORT) || 587,
-  secure: false,
+  secure: process.env.EMAIL_SECURE === "true", // true for port 465 (Resend), false for 587 (Gmail)
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
+
+// ── Email HTML templates ───────────────────────────────────────────────────
+
+/**
+ * Builds a styled verification email.
+ * @param {string} name  - User's full name or username
+ * @param {string} url   - The verification link
+ * @returns {string} HTML string
+ */
+function buildVerifyEmailHtml(name, url) {
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+  <body style="margin:0;padding:0;background:#f4f6fb;font-family:Arial,Helvetica,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:40px 0;">
+      <tr><td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:16px;overflow:hidden;
+                 box-shadow:0 4px 24px rgba(57,73,171,0.10);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#3949ab;padding:32px 40px;text-align:center;">
+              <h1 style="color:#f0d060;margin:0;font-size:24px;font-weight:800;
+                         letter-spacing:0.5px;">Geodesy &amp; Geodynamics</h1>
+              <p style="color:rgba(255,255,255,0.80);margin:6px 0 0;font-size:13px;">
+                Ethiopia Disaster Monitoring Dashboard
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;">
+              <h2 style="color:#3949ab;margin:0 0 12px;font-size:20px;">
+                Verify your email address
+              </h2>
+              <p style="color:#444;font-size:14px;line-height:1.6;margin:0 0 24px;">
+                Hi <strong>${name}</strong>,<br><br>
+                Thanks for registering! Please click the button below to verify your
+                email address. This link expires in <strong>24 hours</strong>.
+              </p>
+
+              <!-- CTA Button -->
+              <table cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
+                <tr>
+                  <td align="center" style="border-radius:10px;background:#3949ab;">
+                    <a href="${url}"
+                       style="display:inline-block;padding:14px 36px;
+                              color:#ffffff;font-size:15px;font-weight:700;
+                              text-decoration:none;border-radius:10px;
+                              letter-spacing:0.3px;">
+                      ✅ Verify Email Address
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color:#666;font-size:12px;line-height:1.6;margin:0 0 8px;">
+                Or paste this link into your browser:
+              </p>
+              <p style="margin:0 0 24px;">
+                <a href="${url}" style="color:#3949ab;font-size:12px;word-break:break-all;">${url}</a>
+              </p>
+
+              <hr style="border:none;border-top:1px solid #e8eaf0;margin:0 0 20px;">
+              <p style="color:#999;font-size:11px;margin:0;">
+                If you didn't create an account, you can safely ignore this email.
+                Your account will not be activated without verification.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f0eeff;padding:18px 40px;text-align:center;">
+              <p style="color:#888;font-size:11px;margin:0;">
+                © ${new Date().getFullYear()} Geodesy &amp; Geodynamics Department &nbsp;·&nbsp;
+                Ethiopia Spatial Data Infrastructure
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td></tr>
+    </table>
+  </body>
+  </html>`;
+}
 
 app.post("/api/send-approval-email", async (req, res) => {
   const { email, fullName, action } = req.body;
@@ -599,6 +1030,120 @@ app.post("/api/send-approval-email", async (req, res) => {
       detail: err.message,
       sent: false,
     });
+  }
+});
+
+// ── POST /api/forgot-password — request a password reset email ────────────
+app.post("/api/forgot-password", async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "Email is required." });
+
+  try {
+    const user = await User.findOne({ email: email.toLowerCase() });
+    // Always return success to prevent email enumeration
+    if (!user) {
+      return res.json({
+        message: "If that email exists, a reset link has been sent.",
+      });
+    }
+
+    // Generate a short-lived JWT signed with secret + current password hash
+    // (so the token is invalidated automatically once the password changes)
+    const secret = JWT_SECRET + user.password;
+    const token = jwt.sign({ id: user._id, email: user.email }, secret, {
+      expiresIn: "1h",
+    });
+
+    // Persist token + expiry on the user document
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await user.save();
+
+    const resetURL = `http://localhost:3000/reset-password?id=${user._id}&token=${token}`;
+
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.warn("[server] Email not configured — reset URL:", resetURL);
+      return res.json({
+        message: "If that email exists, a reset link has been sent.",
+      });
+    }
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;border:1px solid #e0e0e0;border-radius:12px;">
+        <h2 style="color:#3949ab;margin-bottom:8px;">Password Reset Request</h2>
+        <p>Hi <strong>${user.fullName || user.username}</strong>,</p>
+        <p>We received a request to reset your password. Click the button below to continue. The link expires in <strong>1 hour</strong>.</p>
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${resetURL}" style="display:inline-block;padding:13px 32px;background:#3949ab;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;">Reset Password</a>
+        </div>
+        <p style="font-size:13px;color:#666;">Or paste this link into your browser:<br/>
+          <a href="${resetURL}" style="color:#3949ab;word-break:break-all;">${resetURL}</a>
+        </p>
+        <p style="font-size:12px;color:#999;margin-top:20px;">If you did not request this, you can safely ignore this email. Your password will remain unchanged.</p>
+        <p style="font-size:12px;color:#999;">— Geodesy &amp; Geodynamics Department</p>
+      </div>`;
+
+    await emailTransporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: user.email,
+      subject: "🔑 Password Reset — Geodesy & Geodynamics",
+      html,
+    });
+
+    console.log(`[server] Password reset email sent to ${user.email}`);
+    res.json({ message: "If that email exists, a reset link has been sent." });
+  } catch (err) {
+    console.error("[server] Forgot-password error:", err.message);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
+});
+
+// ── POST /api/reset-password — set a new password using the reset token ───
+app.post("/api/reset-password", async (req, res) => {
+  const { id, token, password } = req.body;
+  if (!id || !token || !password) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
+  if (password.length < 6) {
+    return res
+      .status(400)
+      .json({ error: "Password must be at least 6 characters." });
+  }
+
+  try {
+    const user = await User.findById(id);
+    if (!user || !user.resetPasswordToken) {
+      return res.status(400).json({ error: "Invalid or expired reset link." });
+    }
+
+    // Check expiry
+    if (user.resetPasswordExpires < new Date()) {
+      return res
+        .status(400)
+        .json({ error: "Reset link has expired. Please request a new one." });
+    }
+
+    // Verify the JWT using the secret tied to the old password
+    const secret = JWT_SECRET + user.password;
+    try {
+      jwt.verify(token, secret);
+    } catch {
+      return res.status(400).json({ error: "Invalid or expired reset link." });
+    }
+
+    // Update password and clear reset fields
+    user.password = password;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    console.log(`[server] Password reset successful for ${user.email}`);
+    res.json({
+      message: "Password has been reset successfully. You can now log in.",
+    });
+  } catch (err) {
+    console.error("[server] Reset-password error:", err.message);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
   }
 });
 

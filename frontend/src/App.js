@@ -19,6 +19,9 @@ import Earthquake from "./Pages/Earthquake ";
 import Research from "./Pages/Research";
 import Login from "./Pages/Login";
 import Register from "./Pages/Register";
+import ForgotPassword from "./Pages/ForgotPassword";
+import ResetPassword from "./Pages/ResetPassword";
+import VerifyEmail from "./Pages/VerifyEmail";
 import Dashboard from "./Pages/Dashboard";
 import AdminPanel from "./Pages/AdminApproval";
 import AdminLogin from "./Pages/AdminLogin";
@@ -197,6 +200,9 @@ function App() {
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/admin-login" element={<AdminLogin />} />

@@ -13,6 +13,21 @@ import {
 
 const BRAND = "#3949ab";
 
+// ── Shared password strength helper ──────────────────────────────────────
+function getStrength(pw) {
+  if (!pw) return null;
+  const hasUpper = /[A-Z]/.test(pw);
+  const hasLower = /[a-z]/.test(pw);
+  const hasNum = /[0-9]/.test(pw);
+  const hasSpec = /[^A-Za-z0-9]/.test(pw);
+  const score = [pw.length >= 8, hasUpper, hasLower, hasNum, hasSpec].filter(
+    Boolean,
+  ).length;
+  if (score <= 2) return { label: "Weak", color: "#ef5350", width: "33%" };
+  if (score <= 3) return { label: "Fair", color: "#ff9800", width: "60%" };
+  return { label: "Strong", color: "#4caf50", width: "100%" };
+}
+
 function Register() {
   const [formData, setFormData] = useState({
     username: "",
@@ -28,6 +43,11 @@ function Register() {
   const [showCpw, setShowCpw] = useState(false);
   const [agree, setAgree] = useState(false);
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState(""); // shown under the phone field
+  // phoneDigits holds only the 9-digit part the user types; we prepend +251 on submit
+  const [phoneDigits, setPhoneDigits] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -38,12 +58,29 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setErrorCode("");
+    setEmailError("");
+    setPhoneError("");
     setSuccess("");
     if (!agree) return setError("You must accept the terms of the agreement.");
     if (formData.password !== formData.confirmPassword)
       return setError("Passwords do not match");
     if (formData.password.length < 6)
       return setError("Password must be at least 6 characters");
+    const pwStrength = getStrength(formData.password);
+    if (pwStrength && pwStrength.label === "Weak")
+      return setError(
+        "Password is too weak. Add uppercase letters, numbers, or symbols.",
+      );
+    // Phone validation — required, must be exactly 9 digits
+    if (!/^\d{9}$/.test(phoneDigits)) {
+      setPhoneError(
+        phoneDigits === ""
+          ? "Phone number is required"
+          : "Enter exactly 9 digits after +251 (e.g. 912345678)",
+      );
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/register", {
@@ -52,7 +89,8 @@ function Register() {
         body: JSON.stringify({
           username: formData.username,
           email: formData.email,
-          phone: formData.phone,
+          // Send full Ethiopian number or empty string
+          phone: phoneDigits ? "+251" + phoneDigits : "",
           password: formData.password,
           fullName: formData.fullName,
           department: formData.department,
@@ -61,12 +99,21 @@ function Register() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Registration failed");
+        if (data.code === "EMAIL_REJECTED") {
+          // Show error directly under the email field
+          setEmailError(
+            data.error || "This email address could not be verified.",
+          );
+          setErrorCode("EMAIL_REJECTED");
+        } else {
+          setError(data.error || "Registration failed");
+          setErrorCode(data.code || "");
+        }
         setLoading(false);
         return;
       }
       setSuccess(
-        "Registration successful! Your account is pending admin approval.",
+        "Registration successful! Please check your email to verify your address.",
       );
       setFormData({
         username: "",
@@ -78,7 +125,8 @@ function Register() {
         department: "",
         designation: "LEO",
       });
-      setTimeout(() => navigate("/login"), 3000);
+      setPhoneDigits("");
+      setTimeout(() => navigate("/verify-email"), 2000);
     } catch {
       setError("Could not reach the server. Make sure the backend is running.");
       setLoading(false);
@@ -137,7 +185,7 @@ function Register() {
           >
             {/* Row 1: Full Name + Username */}
             <div style={rowStyle}>
-              <FieldWrap icon={<FiUser size={14} />}>
+              <FieldWrap icon={<FiUser size={14} />} required>
                 <input
                   name="fullName"
                   value={formData.fullName}
@@ -147,7 +195,7 @@ function Register() {
                   style={inputStyle}
                 />
               </FieldWrap>
-              <FieldWrap icon={<FiUser size={14} />}>
+              <FieldWrap icon={<FiUser size={14} />} required>
                 <input
                   name="username"
                   value={formData.username}
@@ -161,32 +209,146 @@ function Register() {
 
             {/* Row 2: Phone + Email */}
             <div style={rowStyle}>
-              <FieldWrap icon={<FiPhone size={14} />}>
-                <input
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="Phone (optional)"
-                  style={inputStyle}
-                />
-              </FieldWrap>
-              <FieldWrap icon={<FiMail size={14} />}>
-                <input
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  placeholder="Email"
-                  style={inputStyle}
-                />
-              </FieldWrap>
+              {/* ── Ethiopian phone field ── same flex:1 as FieldWrap ── */}
+              <div style={{ position: "relative", flex: "1 1 0", minWidth: 0 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    borderRadius: "10px",
+                    border: phoneError
+                      ? "1.5px solid #ef5350"
+                      : "1.5px solid #d8d4f0",
+                    overflow: "hidden",
+                    background: "rgba(255,255,255,0.80)",
+                    height: "36px",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  {/* Fixed +251 — no background fill, just a right divider line */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      padding: "0 8px 0 10px",
+                      borderRight: "1.5px solid #d8d4f0",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      color: "#3949ab",
+                      whiteSpace: "nowrap",
+                      userSelect: "none",
+                      flexShrink: 0,
+                      height: "100%",
+                    }}
+                  >
+                    <FiPhone size={13} color="#9c9cb8" />
+                    +251
+                  </div>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    value={phoneDigits}
+                    placeholder="9 digits"
+                    maxLength={9}
+                    onChange={(e) => {
+                      const digits = e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 9);
+                      setPhoneDigits(digits);
+                      if (phoneError) setPhoneError("");
+                    }}
+                    style={{
+                      flex: 1,
+                      border: "none",
+                      outline: "none",
+                      padding: "0 10px",
+                      fontSize: "12px",
+                      color: "#333",
+                      background: "transparent",
+                      minWidth: 0,
+                      height: "100%",
+                    }}
+                  />
+                </div>
+                {/* Red * badge — matches FieldWrap positioning */}
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "4px",
+                    right: "6px",
+                    color: "#ef5350",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    pointerEvents: "none",
+                  }}
+                >
+                  *
+                </span>
+                {phoneError && (
+                  <p
+                    style={{
+                      margin: "3px 0 0",
+                      fontSize: "11px",
+                      color: "#ef5350",
+                      fontWeight: 500,
+                      paddingLeft: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    ⚠ {phoneError}
+                  </p>
+                )}
+              </div>
+
+              {/* ── Email field ── */}
+              <div style={{ position: "relative", flex: "1 1 0", minWidth: 0 }}>
+                <FieldWrap icon={<FiMail size={14} />} required>
+                  <input
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => {
+                      handleChange(e);
+                      if (emailError) setEmailError("");
+                    }}
+                    required
+                    placeholder="Email"
+                    style={{
+                      ...inputStyle,
+                      border: emailError
+                        ? "1.5px solid #ef5350"
+                        : "1.5px solid #d8d4f0",
+                    }}
+                  />
+                </FieldWrap>
+                {emailError && (
+                  <p
+                    style={{
+                      margin: "3px 0 0",
+                      fontSize: "11px",
+                      color: "#ef5350",
+                      fontWeight: 500,
+                      paddingLeft: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    ⚠ {emailError}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Row 3: Password + Confirm */}
             <div style={rowStyle}>
               <FieldWrap
                 icon={<FiLock size={14} />}
+                required
                 extra={
                   <button
                     type="button"
@@ -209,6 +371,7 @@ function Register() {
               </FieldWrap>
               <FieldWrap
                 icon={<FiLock size={14} />}
+                required
                 extra={
                   <button
                     type="button"
@@ -231,6 +394,50 @@ function Register() {
               </FieldWrap>
             </div>
 
+            {/* Password strength bar */}
+            {(() => {
+              const s = getStrength(formData.password);
+              if (!s) return null;
+              return (
+                <div>
+                  <div
+                    style={{
+                      height: "4px",
+                      borderRadius: "4px",
+                      background: "#e0e0e0",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: s.width,
+                        background: s.color,
+                        borderRadius: "4px",
+                        transition: "width 0.3s, background 0.3s",
+                      }}
+                    />
+                  </div>
+                  <p
+                    style={{
+                      fontSize: "11px",
+                      color: s.color,
+                      margin: "3px 0 0",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {s.label}
+                    {s.label === "Weak" && (
+                      <span style={{ color: "#888", fontWeight: 400 }}>
+                        {" "}
+                        — add uppercase, numbers, or symbols
+                      </span>
+                    )}
+                  </p>
+                </div>
+              );
+            })()}
+
             {/* Row 4: Department + Designation */}
             <div style={rowStyle}>
               <FieldWrap icon={<FiGrid size={14} />}>
@@ -247,13 +454,32 @@ function Register() {
                   name="designation"
                   value={formData.designation}
                   onChange={handleChange}
-                  style={{ ...inputStyle, appearance: "none" }}
+                  style={{
+                    ...inputStyle,
+                    appearance: "none",
+                    paddingRight: "28px",
+                  }}
                 >
                   <option value="LEO">LEO (Leader Executive Officer)</option>
                   <option value="Researcher">Researcher</option>
                   <option value="Faculty">Faculty</option>
                   <option value="Student">Student Researcher</option>
                 </select>
+                {/* Custom dropdown arrow */}
+                <span
+                  style={{
+                    position: "absolute",
+                    right: "10px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    pointerEvents: "none",
+                    color: "#9c9cb8",
+                    fontSize: "10px",
+                    lineHeight: 1,
+                  }}
+                >
+                  ▼
+                </span>
               </FieldWrap>
             </div>
 
@@ -282,10 +508,11 @@ function Register() {
                 style={{
                   background: "#ffebee",
                   color: "#c62828",
-                  padding: "9px",
+                  padding: "9px 12px",
                   borderRadius: "8px",
                   fontSize: "12px",
                   textAlign: "center",
+                  borderLeft: "3px solid #ef5350",
                 }}
               >
                 {error}
@@ -309,12 +536,22 @@ function Register() {
             {/* Sign Up button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={
+                loading || getStrength(formData.password)?.label === "Weak"
+              }
               style={{
                 ...primaryBtn,
+                background:
+                  getStrength(formData.password)?.label === "Weak"
+                    ? "#bbb"
+                    : BRAND,
                 opacity: loading ? 0.7 : 1,
-                cursor: loading ? "not-allowed" : "pointer",
+                cursor:
+                  loading || getStrength(formData.password)?.label === "Weak"
+                    ? "not-allowed"
+                    : "pointer",
                 marginTop: "4px",
+                transition: "background 0.3s",
               }}
             >
               {loading ? "Registering…" : "Sign Up"}
@@ -383,9 +620,16 @@ function Register() {
 }
 
 // ── Helper: field wrapper with left icon and optional right element ────────
-function FieldWrap({ icon, extra, children }) {
+function FieldWrap({ icon, extra, children, required: isRequired }) {
   return (
-    <div style={{ position: "relative", flex: 1 }}>
+    <div
+      style={{
+        position: "relative",
+        flex: "1 1 0",
+        minWidth: 0,
+        overflow: "hidden",
+      }}
+    >
       <span
         style={{
           position: "absolute",
@@ -394,17 +638,36 @@ function FieldWrap({ icon, extra, children }) {
           transform: "translateY(-50%)",
           color: "#9c9cb8",
           pointerEvents: "none",
+          zIndex: 1,
         }}
       >
         {icon}
       </span>
       {children}
       {extra}
+      {isRequired && (
+        <span
+          style={{
+            position: "absolute",
+            top: "4px",
+            right: "6px",
+            color: "#ef5350",
+            fontSize: "13px",
+            fontWeight: 700,
+            lineHeight: 1,
+            pointerEvents: "none",
+          }}
+        >
+          *
+        </span>
+      )}
     </div>
   );
 }
 
 // ── Shared styles ──────────────────────────────────────────────────────────
+// Using `flex: 1 1 0` + `minWidth: 0` on the row forces both columns to
+// start from zero width and grow equally, regardless of content.
 const rowStyle = { display: "flex", gap: "10px" };
 
 const inputStyle = {
@@ -417,6 +680,7 @@ const inputStyle = {
   outline: "none",
   color: "#333",
   boxSizing: "border-box",
+  height: "36px",
 };
 
 const eyeBtn = {
