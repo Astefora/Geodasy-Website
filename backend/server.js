@@ -26,11 +26,13 @@ const cors = require("cors");
 const https = require("https");
 const crypto = require("crypto"); // for email verification tokens
 const cookieParser = require("cookie-parser"); // for Remember Me cookies
+const cron = require("node-cron"); // for daily hazard digest scheduler
 require("dotenv").config();
 
 const Upload = require("./models/Upload");
 const User = require("./models/User");
 const RememberToken = require("./models/RememberToken");
+const Subscription = require("./models/Subscription");
 const {
   rememberMeMiddleware,
   issueRememberToken,
@@ -591,6 +593,215 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+// ── POST /api/subscriptions — subscribe to hazard alerts / research updates ──
+app.post("/api/subscriptions", async (req, res) => {
+  const { email } = req.body;
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res
+      .status(400)
+      .json({ error: "Please enter a valid email address." });
+  }
+
+  try {
+    const existing = await Subscription.findOne({ email: email.toLowerCase() });
+
+    if (existing) {
+      if (existing.is_active) {
+        return res
+          .status(409)
+          .json({ error: "This email is already subscribed." });
+      }
+      // Re-activate a previously unsubscribed address
+      existing.is_active = true;
+      await existing.save();
+      console.log(`[server] Subscription re-activated: ${email}`);
+      return res
+        .status(200)
+        .json({ message: "Welcome back! You have been re-subscribed." });
+    }
+
+    const sub = await Subscription.create({ email: email.toLowerCase() });
+    console.log(`[server] New subscriber: ${sub.email}`);
+
+    // Send a confirmation email to the subscriber (non-fatal if it fails)
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      const APP_URL = process.env.APP_URL || "http://localhost:3000";
+      const unsubUrl = `${APP_URL}/unsubscribe?token=${sub.unsubscribeToken}`;
+      emailTransporter
+        .sendMail({
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+          to: sub.email,
+          subject: "✅ You are now subscribed — Geodesy & Geodynamics",
+          html: `
+          <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;border:1px solid #e0e0e0;border-radius:12px;">
+            <h2 style="color:#3949ab;margin:0 0 12px;">Subscription Confirmed!</h2>
+            <p>You are now subscribed to <strong>hazard alerts</strong> and <strong>research updates</strong> from the Geodesy &amp; Geodynamics Department, SSGI.</p>
+            <p>You will receive email notifications whenever new hazard data or research publications are available.</p>
+            <hr style="border:none;border-top:1px solid #e0e0e0;margin:16px 0;">
+            <p style="font-size:12px;color:#999;">
+              To unsubscribe at any time, click here:
+              <a href="${unsubUrl}" style="color:#3949ab;">Unsubscribe</a>
+            </p>
+          </div>`,
+        })
+        .catch((e) =>
+          console.error(
+            "[server] Subscription confirm email failed:",
+            e.message,
+          ),
+        );
+    }
+
+    res.status(201).json({
+      message:
+        "Successfully subscribed! You will receive hazard alerts and research updates.",
+    });
+  } catch (err) {
+    console.error("[server] Subscription error:", err.message);
+    res.status(500).json({ error: "Subscription failed. Please try again." });
+  }
+});
+
+// ── GET /api/unsubscribe — one-click unsubscribe via token link ────────────
+app.get("/api/unsubscribe", async (req, res) => {
+  const { token } = req.query;
+  if (!token) return res.status(400).send("Invalid unsubscribe link.");
+
+  try {
+    const sub = await Subscription.findOne({ unsubscribeToken: token });
+    if (!sub) return res.status(404).send("Subscription not found.");
+
+    sub.is_active = false;
+    await sub.save();
+    console.log(`[server] Unsubscribed: ${sub.email}`);
+
+    const APP_URL = process.env.APP_URL || "http://localhost:3000";
+    res.redirect(`${APP_URL}/?unsubscribed=1`);
+  } catch (err) {
+    console.error("[server] Unsubscribe error:", err.message);
+    res.status(500).send("Something went wrong. Please try again.");
+  }
+});
+
+// ── POST /api/subscriptions/notify — send alert to all active subscribers ──
+// This endpoint is called internally (e.g., from admin panel or automated job)
+// when a new hazard alert or research update is published.
+// Body: { subject, htmlBody, type: "hazard_alert" | "research_update" }
+app.post("/api/subscriptions/notify", async (req, res) => {
+  const { subject, htmlBody, type } = req.body;
+  if (!subject || !htmlBody) {
+    return res
+      .status(400)
+      .json({ error: "subject and htmlBody are required." });
+  }
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    return res
+      .status(503)
+      .json({ error: "Email not configured on this server." });
+  }
+
+  try {
+    const topicFilter =
+      type === "research_update" ? "research_updates" : "hazard_alerts";
+    const subscribers = await Subscription.find({
+      is_active: true,
+      topics: topicFilter,
+    }).select("email unsubscribeToken");
+
+    if (subscribers.length === 0) {
+      return res.json({ message: "No active subscribers.", sent: 0 });
+    }
+
+    const APP_URL = process.env.APP_URL || "http://localhost:3000";
+    let sent = 0;
+    let failed = 0;
+
+    // Send in batches to avoid overwhelming the SMTP server
+    for (const sub of subscribers) {
+      const unsubUrl = `${APP_URL}/api/unsubscribe?token=${sub.unsubscribeToken}`;
+      const footerHtml = `
+        <hr style="border:none;border-top:1px solid #e0e0e0;margin:16px 0;">
+        <p style="font-size:11px;color:#999;text-align:center;">
+          Geodesy &amp; Geodynamics Department — SSGI &nbsp;|&nbsp;
+          <a href="${unsubUrl}" style="color:#3949ab;">Unsubscribe</a>
+        </p>`;
+
+      try {
+        await emailTransporter.sendMail({
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+          to: sub.email,
+          subject,
+          html: htmlBody + footerHtml,
+        });
+        sent++;
+      } catch (mailErr) {
+        console.error(
+          `[server] Notify failed for ${sub.email}:`,
+          mailErr.message,
+        );
+        failed++;
+      }
+    }
+
+    console.log(
+      `[server] Notification sent: ${sent} success, ${failed} failed`,
+    );
+    res.json({
+      message: `Notifications sent.`,
+      sent,
+      failed,
+      total: subscribers.length,
+    });
+  } catch (err) {
+    console.error("[server] Notify error:", err.message);
+    res.status(500).json({ error: "Notification failed." });
+  }
+});
+
+// ── POST /api/contact — send a contact message to the department email ────
+app.post("/api/contact", async (req, res) => {
+  const { name, email, subject, message } = req.body;
+  if (!name || !email || !message) {
+    return res
+      .status(400)
+      .json({ error: "Name, email and message are required." });
+  }
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn("[server] Email not configured — contact form not sent.");
+    return res.json({
+      message: "Message received. (Email not configured on server.)",
+    });
+  }
+  try {
+    await emailTransporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER, // send to the department's own configured email
+      replyTo: email, // reply goes back to the visitor
+      subject: `[Contact Form] ${subject || "Message from " + name}`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;border:1px solid #e0e0e0;border-radius:12px;">
+          <h2 style="color:#3949ab;margin:0 0 16px;">New Contact Form Submission</h2>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+            <tr><td style="padding:6px 0;color:#666;width:80px;">Name</td><td style="padding:6px 0;font-weight:600;">${name}</td></tr>
+            <tr><td style="padding:6px 0;color:#666;">Email</td><td style="padding:6px 0;">${email}</td></tr>
+            ${subject ? `<tr><td style="padding:6px 0;color:#666;">Subject</td><td style="padding:6px 0;">${subject}</td></tr>` : ""}
+          </table>
+          <div style="background:#f9fafb;border-radius:8px;padding:16px;font-size:14px;line-height:1.7;color:#333;">
+            ${message.replace(/\n/g, "<br>")}
+          </div>
+          <p style="font-size:11px;color:#999;margin-top:20px;">Sent via the Geodesy &amp; Geodynamics contact form.</p>
+        </div>`,
+    });
+    console.log(`[server] Contact form email sent from ${email}`);
+    res.json({ message: "Your message has been sent successfully!" });
+  } catch (err) {
+    console.error("[server] Contact email failed:", err.message);
+    res
+      .status(500)
+      .json({ error: "Failed to send message. Please try again later." });
+  }
+});
+
 // ── POST /api/logout — clear session and revoke Remember Me token ──────────
 app.post("/api/logout", async (req, res) => {
   try {
@@ -803,6 +1014,71 @@ app.put("/api/uploads/:id/approve", async (req, res) => {
       return res.status(404).json({ error: "Upload not found." });
     }
     console.log(`[server] Upload approved: ${uploadRecord.title}`);
+
+    // ── Notify subscribers when an upload is approved ─────────────────────
+    // Determine the topic: uploads tagged as research go to research_updates,
+    // everything else (hazard data) goes to hazard_alerts.
+    const isResearch = !uploadRecord.title?.startsWith("Disaster Data:");
+    const topic = isResearch ? "research_update" : "hazard_alert";
+    const subjectLine = isResearch
+      ? `📚 New Research Published: ${uploadRecord.title}`
+      : `⚠️ New Hazard Data: ${uploadRecord.title}`;
+
+    const APP_URL = process.env.APP_URL || "http://localhost:3000";
+    const htmlBody = `
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;border:1px solid #e0e0e0;border-radius:12px;">
+        <h2 style="color:#3949ab;margin:0 0 12px;">${isResearch ? "📚 New Research Update" : "⚠️ Hazard Alert"}</h2>
+        <h3 style="margin:0 0 8px;color:#111;">${uploadRecord.title}</h3>
+        ${uploadRecord.description ? `<p style="color:#555;line-height:1.7;">${uploadRecord.description}</p>` : ""}
+        ${uploadRecord.hazardType ? `<p><strong>Hazard Type:</strong> ${uploadRecord.hazardType}</p>` : ""}
+        ${uploadRecord.uploadedBy ? `<p><strong>Uploaded by:</strong> ${uploadRecord.uploadedBy}</p>` : ""}
+        <div style="margin-top:20px;">
+          <a href="${APP_URL}${isResearch ? "/research" : "/hazards"}" style="display:inline-block;padding:10px 20px;background:#3949ab;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold;">
+            ${isResearch ? "View Research Portal" : "View Hazard Dashboard"}
+          </a>
+        </div>
+      </div>`;
+
+    // Fire-and-forget — don't block the approval response for email delivery
+    Subscription.find({
+      is_active: true,
+      topics:
+        topic === "research_update" ? "research_updates" : "hazard_alerts",
+    })
+      .select("email unsubscribeToken")
+      .then(async (subscribers) => {
+        if (subscribers.length === 0) return;
+        const footer = (token) => `
+          <hr style="border:none;border-top:1px solid #e0e0e0;margin:16px 0;">
+          <p style="font-size:11px;color:#999;text-align:center;">
+            Geodesy &amp; Geodynamics Department — SSGI &nbsp;|&nbsp;
+            <a href="${APP_URL}/api/unsubscribe?token=${token}" style="color:#3949ab;">Unsubscribe</a>
+          </p>`;
+        let sent = 0;
+        for (const sub of subscribers) {
+          try {
+            await emailTransporter.sendMail({
+              from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+              to: sub.email,
+              subject: subjectLine,
+              html: htmlBody + footer(sub.unsubscribeToken),
+            });
+            sent++;
+          } catch (e) {
+            console.error(
+              `[server] Notify failed for ${sub.email}:`,
+              e.message,
+            );
+          }
+        }
+        console.log(
+          `[server] Notified ${sent}/${subscribers.length} subscribers for: ${uploadRecord.title}`,
+        );
+      })
+      .catch((e) =>
+        console.error("[server] Subscriber query error:", e.message),
+      );
+
     res.json({ message: "Upload approved.", upload: uploadRecord });
   } catch (err) {
     console.error("[server] Upload approval error:", err.message);
@@ -1602,6 +1878,205 @@ app.use((err, _req, res, _next) => {
   console.error("[server] Unhandled error:", err);
   res.status(500).json({ error: "Internal server error" });
 });
+
+// ── Daily hazard digest — runs every day at 07:00 AM server time ──────────────
+/**
+ * Fetches live hazard data from external APIs (the same ones the frontend uses)
+ * and sends a summary email to all active subscribers.
+ * Only hazard types that have real data in the last 24 hours are included.
+ */
+async function fetchWithTimeout(url, timeoutMs = 10000) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(
+      url,
+      {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "GeodDashboard/1.0",
+        },
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (c) => (body += c));
+        res.on("end", () => {
+          try {
+            resolve(JSON.parse(body));
+          } catch {
+            resolve(null);
+          }
+        });
+      },
+    );
+    req.on("error", reject);
+    req.setTimeout(timeoutMs, () => {
+      req.destroy();
+      reject(new Error("timeout"));
+    });
+  });
+}
+
+async function buildDailyDigest() {
+  const APP_URL = process.env.APP_URL || "http://localhost:3000";
+  const FIRMS_KEY = process.env.REACT_APP_FIRMS_MAP_KEY;
+  const sections = [];
+
+  // ── 1. Earthquakes (USGS — last 24h, M3.5+ near Ethiopia) ──────────────
+  try {
+    const now = new Date();
+    const yesterday = new Date(now - 24 * 60 * 60 * 1000);
+    const usgsUrl = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${yesterday.toISOString()}&endtime=${now.toISOString()}&minmagnitude=3.5&minlatitude=3&maxlatitude=15&minlongitude=33&maxlongitude=48&orderby=magnitude`;
+    const data = await fetchWithTimeout(usgsUrl);
+    const count = data?.features?.length || 0;
+    if (count > 0) sections.push({ icon: "🌍", title: `Earthquakes: ${count} event${count > 1 ? "s" : ""} (M3.5+)`, link: `${APP_URL}/hazards/earthquake` });
+  } catch (e) { console.error("[digest] Earthquake fetch failed:", e.message); }
+
+  // ── 2. Fire hotspots (NASA FIRMS — today, Ethiopia) ──────────────────────
+  try {
+    if (FIRMS_KEY) {
+      const today = new Date().toISOString().slice(0, 10);
+      const firmsUrl = `https://firms.modaps.eosdis.nasa.gov/api/country/csv/${FIRMS_KEY}/VIIRS_SNPP_NRT/ETH/1/${today}`;
+      const csvData = await new Promise((resolve, reject) => {
+        https.get(firmsUrl, { headers: { "User-Agent": "GeodDashboard/1.0" } }, (res) => {
+          let body = "";
+          res.on("data", (c) => (body += c));
+          res.on("end", () => resolve(body));
+        }).on("error", reject);
+      });
+      const count = csvData.trim().split("\n").filter((l) => l && !l.startsWith("latitude")).length;
+      if (count > 0) sections.push({ icon: "🔥", title: `Fire Hotspots: ${count} active hotspot${count > 1 ? "s" : ""} detected`, link: `${APP_URL}/hazards/fire` });
+    }
+  } catch (e) { console.error("[digest] FIRMS fetch failed:", e.message); }
+
+  // ── 3. Landslides (NASA catalog — last 24h, Ethiopia bounding box) ────────
+  try {
+    const lsUrl = "https://data.nasa.gov/resource/tfkf-kniw.json?$limit=200&$order=event_date DESC";
+    const lsData = await fetchWithTimeout(lsUrl);
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const count = (lsData || []).filter((e) => {
+      if (!e.event_date) return false;
+      const lat = parseFloat(e.latitude), lon = parseFloat(e.longitude);
+      return new Date(e.event_date) >= cutoff && lat >= 3 && lat <= 15 && lon >= 33 && lon <= 48;
+    }).length;
+    if (count > 0) sections.push({ icon: "⛰️", title: `Landslides: ${count} event${count > 1 ? "s" : ""}`, link: `${APP_URL}/hazards/landslide` });
+  } catch (e) { console.error("[digest] Landslide fetch failed:", e.message); }
+
+  return sections.length === 0 ? null : sections;
+}    }
+  } catch (e) {
+    console.error("[digest] Landslide fetch failed:", e.message);
+  }
+
+  // Return null if no data found for any hazard type today
+  if (sections.length === 0) return null;
+  return sections;
+}
+
+async function sendDailyDigest() {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log("[digest] Email not configured — skipping daily digest.");
+    return;
+  }
+
+  console.log("[digest] Building daily hazard digest…");
+  const sections = await buildDailyDigest();
+
+  if (!sections) {
+    console.log(
+      "[digest] No hazard data found for the last 24h — digest not sent.",
+    );
+    return;
+  }
+
+  const subscribers = await Subscription.find({
+    is_active: true,
+    topics: "hazard_alerts",
+  }).select("email unsubscribeToken");
+  if (subscribers.length === 0) {
+    console.log("[digest] No active hazard_alerts subscribers.");
+    return;
+  }
+
+  const APP_URL = process.env.APP_URL || "http://localhost:3000";
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  // Build the email body — just counts per hazard type, no detail tables
+  const sectionsHtml =
+    `<table style="width:100%;border-collapse:collapse;font-size:14px;">` +
+    sections
+      .map(
+        (s) => `
+      <tr>
+        <td style="padding:10px 4px;border-bottom:1px solid #f0f0f0;">${s.icon} ${s.title}</td>
+        <td style="padding:10px 4px;border-bottom:1px solid #f0f0f0;text-align:right;">
+          <a href="${s.link}" style="font-size:12px;color:#3949ab;text-decoration:none;">View →</a>
+        </td>
+      </tr>`,
+      )
+      .join("") +
+    `</table>`;
+
+  const htmlBody = `
+    <div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;padding:0;">
+      <div style="background:linear-gradient(135deg,#1f4fd8,#1d4ed8);padding:24px 28px;border-radius:12px 12px 0 0;">
+        <h2 style="color:#f0d060;margin:0 0 4px;font-size:20px;">⚠️ Daily Hazard Digest</h2>
+        <p style="color:rgba(255,255,255,0.8);margin:0;font-size:13px;">${today}</p>
+      </div>
+      <div style="background:#fff;padding:24px 28px;border:1px solid #e0e0e0;border-top:none;">
+        <p style="color:#555;font-size:13px;margin:0 0 20px;">Here is your daily summary of active natural hazard events in Ethiopia and surrounding regions:</p>
+        ${sectionsHtml}
+        <div style="margin-top:20px;text-align:center;">
+          <a href="${APP_URL}/hazards" style="display:inline-block;padding:10px 24px;background:#3949ab;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold;font-size:13px;">View Hazard Dashboard</a>
+        </div>
+      </div>
+    </div>`;
+
+  let sent = 0;
+  for (const sub of subscribers) {
+    const footer = `
+      <div style="background:#f9fafb;padding:12px 28px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 12px 12px;text-align:center;">
+        <p style="font-size:11px;color:#999;margin:0;">
+          Geodesy &amp; Geodynamics Department — SSGI &nbsp;|&nbsp;
+          <a href="${APP_URL}/api/unsubscribe?token=${sub.unsubscribeToken}" style="color:#3949ab;">Unsubscribe</a>
+        </p>
+      </div>`;
+    try {
+      await emailTransporter.sendMail({
+        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+        to: sub.email,
+        subject: `⚠️ Daily Hazard Digest — ${today}`,
+        html: htmlBody + footer,
+      });
+      sent++;
+    } catch (e) {
+      console.error(`[digest] Failed for ${sub.email}:`, e.message);
+    }
+  }
+  console.log(
+    `[digest] Daily digest sent to ${sent}/${subscribers.length} subscribers.`,
+  );
+}
+
+// Schedule daily digest at 07:00 AM every day
+// Cron format: "minute hour day month weekday"
+cron.schedule(
+  "0 7 * * *",
+  () => {
+    console.log("[digest] Daily cron triggered at 07:00 AM");
+    sendDailyDigest().catch((e) =>
+      console.error("[digest] Scheduler error:", e.message),
+    );
+  },
+  { timezone: "Africa/Addis_Ababa" },
+);
+
+console.log(
+  "[server] Daily hazard digest scheduled at 07:00 AM (Africa/Addis_Ababa)",
+);
 
 // ── Start server ───────────────────────────────────────────────────────────
 app.listen(PORT, "0.0.0.0", () => {

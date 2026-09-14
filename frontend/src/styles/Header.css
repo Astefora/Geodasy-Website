@@ -19,16 +19,20 @@ body[data-theme="light"] a.geoportal-btn {
 
 /* ── Navbar glass background ───────────────────────────────────────────
    Must beat theme.css selectors. Use very high specificity.
-   Dark: 65% opacity — content clearly readable, terrain visible behind
-   Light: 72% opacity — same
+   Dark: deep navy, clearly visible over any background
+   Light: white glass, used everywhere EXCEPT over the hero image
    Scrolled: slightly more opaque for readability
    ─────────────────────────────────────────────────────────────────────── */
+
+/* Dark mode — unchanged from original */
 html body .nav-glass {
   background-color: rgba(3, 7, 18, 0.88) !important;
 }
 html body .nav-glass.nav-scrolled {
   background-color: rgba(3, 7, 18, 0.92) !important;
 }
+
+/* Light mode — default white glass */
 html body[data-theme="light"] .nav-glass {
   background-color: rgba(249, 250, 251, 0.9) !important;
 }
@@ -36,14 +40,47 @@ html body[data-theme="light"] .nav-glass.nav-scrolled {
   background-color: rgba(249, 250, 251, 0.96) !important;
 }
 
-/* ── Light mode: colorful box-shadow border ────────────────────────────── */
-body[data-theme="light"] .nav-glass {
+/* Light mode OVER HERO — override with dark navy.
+   .nav-over-hero is toggled by Header.js only when:
+   - theme is light AND
+   - user is on "/" AND
+   - scrollY is within the hero section
+   Comes AFTER the light rules above so it wins the cascade. */
+html body[data-theme="light"] .nav-glass.nav-over-hero {
+  background-color: rgba(15, 23, 42, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4) !important;
+}
+html body[data-theme="light"] .nav-glass.nav-over-hero.nav-scrolled {
+  background-color: rgba(15, 23, 42, 0.96) !important;
+}
+
+/* Hazard dropdown — dark when over hero in light mode */
+html body[data-theme="light"] .nav-glass.nav-over-hero .hazard-dropdown {
+  background: rgba(15, 23, 42, 0.97) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+html body[data-theme="light"] .nav-glass.nav-over-hero .hazard-dropdown button {
+  color: rgba(209, 213, 219, 1) !important;
+  background: transparent !important;
+}
+html
+  body[data-theme="light"]
+  .nav-glass.nav-over-hero
+  .hazard-dropdown
+  button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+/* ── Light mode default: colorful box-shadow border ───────────────────── */
+body[data-theme="light"] .nav-glass:not(.nav-over-hero) {
   box-shadow:
     0 0 0 1.5px rgba(31, 79, 216, 0.35),
     0 4px 24px rgba(31, 79, 216, 0.08) !important;
   border-color: transparent !important;
 }
-body[data-theme="light"] .nav-glass.nav-scrolled {
+body[data-theme="light"] .nav-glass.nav-scrolled:not(.nav-over-hero) {
   box-shadow:
     0 0 0 1.5px rgba(31, 79, 216, 0.45),
     0 8px 32px rgba(31, 79, 216, 0.12) !important;

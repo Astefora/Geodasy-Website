@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useTheme } from "../ThemeContext";
 import {
   FiAlertTriangle,
   FiArrowRight,
@@ -550,10 +551,26 @@ function StatCard({ num, label, trigger }) {
   const raw = /^\d/.test(num) ? `${displayed}${suffix}` : num;
   return (
     <div className="flex flex-col items-center">
-      <span className="text-2xl md:text-3xl font-extrabold text-orange-400 leading-none">
+      <span
+        style={{
+          fontSize: "1.75rem",
+          fontWeight: 800,
+          color: "#fb923c",
+          lineHeight: 1,
+        }}
+      >
         {raw}
       </span>
-      <span className="mt-1 text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 whitespace-nowrap">
+      <span
+        style={{
+          marginTop: "4px",
+          fontSize: "11px",
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          color: "rgba(209,213,219,0.9)",
+          whiteSpace: "nowrap",
+        }}
+      >
         {label}
       </span>
     </div>
@@ -615,6 +632,8 @@ function HazardCard({ h, index }) {
 
 /* ── Main ─────────────────────────────────────────────────────────────── */
 export default function Home() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const statsRef = useRef(null);
   const heroRef = useRef(null);
   const [statsVisible, setStatsVisible] = useState(false);
@@ -650,95 +669,240 @@ export default function Home() {
 
   return (
     <div className="text-gray-900 dark:text-white transition-colors duration-300">
-      {/* ── HERO — full-bleed, terrain-first composition ──────────────── */}
+      {/* ── HERO — full-bleed background image, edge to edge ─────────── */}
+      {/*
+        The section uses negative margin-top to extend behind the fixed navbar
+        (which has top:12px + ~52px height = ~64px). We then add pt-24 to push
+        the content below the navbar.  This makes the image fill from the very
+        top of the viewport to the bottom of the hero section with no gap.
+      */}
       <section
         ref={heroRef}
         onMouseMove={onHeroMove}
         onMouseLeave={onHeroLeave}
-        className="relative overflow-hidden pt-24 pb-16 px-4 sm:px-8 lg:px-16"
+        data-hero="true"
+        className="relative overflow-hidden px-4 sm:px-8 lg:px-16"
+        style={{
+          backgroundImage: `url('/hero-image.jpg')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          backgroundRepeat: "no-repeat",
+          marginTop: "-80px",
+          paddingTop: "calc(80px + 5rem)",
+          paddingBottom: "0",
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
-        {/* Ultra-light wash — keeps terrain readable */}
+        {/* Dark overlay — reduced opacity so more of the photo is visible */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 bg-white/[0.12] dark:bg-gray-950/[0.18]"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(3,7,18,0.55) 0%, rgba(3,7,18,0.38) 50%, rgba(3,7,18,0.55) 100%)",
+            zIndex: 0,
+          }}
         />
+        {/* Bottom fade so hero blends into the next section */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-white/25 to-transparent dark:from-gray-950/30"
+          className="pointer-events-none absolute inset-x-0 bottom-0"
+          style={{
+            height: "120px",
+            background:
+              "linear-gradient(to bottom, transparent, rgba(3,7,18,0.55))",
+            zIndex: 1,
+          }}
         />
 
         <div
-          className="relative z-10 mx-auto w-full max-w-4xl text-center"
+          className="relative mx-auto w-full max-w-4xl text-center flex-1 flex flex-col justify-center pb-4"
           style={{
+            zIndex: 10,
             transform: `translate3d(${parallax.x}px, ${parallax.y}px, 0)`,
             transition: "transform 0.3s ease-out",
           }}
         >
-          {/* Live badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-orange-300 dark:border-orange-500/40 bg-orange-50/60 dark:bg-orange-500/10 px-4 py-1.5 mb-6 backdrop-blur-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
-            </span>
-            <span className="text-xs font-semibold tracking-widest uppercase text-orange-600 dark:text-orange-400">
-              Live Monitoring — SSGI Ethiopia
-            </span>
+          {/* Live badge — centered */}
+          <div className="flex justify-center mb-6">
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 backdrop-blur-sm"
+              style={{
+                border: "1px solid rgba(251,146,60,0.5)",
+                background: "rgba(249,115,22,0.12)",
+              }}
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
+              </span>
+              <span
+                className="text-xs font-semibold tracking-widest uppercase"
+                style={{ color: "#fdba74" }}
+              >
+                Live Monitoring — SSGI Ethiopia
+              </span>
+            </div>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight mb-6">
-            <span className="text-blue-700 dark:text-blue-400">Disaster</span>{" "}
-            <span className="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">
+          {/* Headline — inline styles bypass all theme.css overrides */}
+          <h1
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight mb-6"
+            style={{ color: "#ffffff" }}
+          >
+            <span style={{ color: "#ffffff" }}>Disaster</span>{" "}
+            <span
+              className="bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text"
+              style={{ color: "transparent" }}
+            >
               Monitoring
             </span>
             <br />
-            <span className="text-blue-700 dark:text-blue-400">Center</span>
+            <span style={{ color: "#ffffff" }}>Center</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed mb-10">
+          <p
+            className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10"
+            style={{ color: "rgba(209,213,219,0.95)" }}
+          >
             Real-time satellite monitoring of natural hazards across Ethiopia —
             earthquake fault lines, volcanic deformation, floods, fires,
             droughts and landslides.
           </p>
 
-          {/* CTA buttons */}
+          {/* CTA buttons — pill style */}
           <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
             <Link
               to="/hazards/earthquake"
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold px-6 py-3 text-sm sm:text-base shadow-lg shadow-blue-700/30 hover:shadow-blue-600/40 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+              className="inline-flex items-center gap-2 font-semibold px-6 py-2.5 text-sm sm:text-base transition-all duration-200 hover:-translate-y-0.5"
+              style={{
+                borderRadius: "999px",
+                border: "1.5px solid rgba(255,255,255,0.50)",
+                background: "rgba(255,255,255,0.22)",
+                color: "#f1f5f9",
+                backdropFilter: "blur(8px)",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.22)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.32)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.75)";
+                e.currentTarget.style.color = "#ffffff";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.22)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.50)";
+                e.currentTarget.style.color = "#f1f5f9";
+              }}
             >
-              Explore Hazards
-              <FiArrowRight size={16} />
+              <FiMap size={15} /> Explore Hazards
             </Link>
+
             <Link
               to="/early-warning"
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-500 hover:text-white dark:hover:bg-orange-500 dark:hover:text-white font-bold px-6 py-3 text-sm sm:text-base transition-all duration-200 hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2.5 font-semibold px-5 py-2.5 text-sm sm:text-base transition-all duration-200 hover:-translate-y-0.5"
+              style={{
+                borderRadius: "999px",
+                background: isDark
+                  ? "rgba(3,7,18,0.97)"
+                  : "rgba(15,23,42,0.95)",
+                border: "1.5px solid rgba(255,255,255,0.18)",
+                color: "#f1f5f9",
+                boxShadow: "0 6px 28px rgba(0,0,0,0.30)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = isDark
+                  ? "rgba(15,23,42,1)"
+                  : "rgba(30,41,59,1)";
+                e.currentTarget.style.color = "#ffffff";
+                e.currentTarget.style.boxShadow = "0 8px 36px rgba(0,0,0,0.45)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = isDark
+                  ? "rgba(3,7,18,0.97)"
+                  : "rgba(15,23,42,0.95)";
+                e.currentTarget.style.color = "#f1f5f9";
+                e.currentTarget.style.boxShadow = "0 6px 28px rgba(0,0,0,0.30)";
+              }}
             >
-              <FiAlertTriangle size={16} /> Early Warning
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "22px",
+                  height: "22px",
+                  borderRadius: "50%",
+                  background: isDark ? "#1d4ed8" : "#2563eb",
+                  flexShrink: 0,
+                }}
+              >
+                <FiAlertTriangle size={12} style={{ color: "#ffffff" }} />
+              </span>
+              Early Warning
+              <FiArrowRight size={14} style={{ opacity: 0.8 }} />
             </Link>
+
             <Link
               to="/research"
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 dark:hover:border-blue-500 font-semibold px-6 py-3 text-sm sm:text-base transition-all duration-200 hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 font-semibold px-6 py-2.5 text-sm sm:text-base transition-all duration-200 hover:-translate-y-0.5"
+              style={{
+                borderRadius: "999px",
+                border: "1.5px solid rgba(255,255,255,0.50)",
+                background: "rgba(255,255,255,0.22)",
+                color: "#f1f5f9",
+                backdropFilter: "blur(8px)",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.22)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.32)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.75)";
+                e.currentTarget.style.color = "#ffffff";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.22)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.50)";
+                e.currentTarget.style.color = "#f1f5f9";
+              }}
             >
-              Research Portal
+              <FiGlobe size={15} /> Research Portal
             </Link>
           </div>
 
-          {/* Stats bar */}
-          <div
-            ref={statsRef}
-            className="mx-auto mt-16 max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 border-t border-gray-200/40 dark:border-gray-800/40 pt-10"
-          >
-            {STATS.map((s) => (
-              <StatCard
-                key={s.label}
-                num={s.num}
-                label={s.label}
-                trigger={statsVisible}
-              />
-            ))}
-          </div>
+          {/* Stats bar placeholder comment */}
+        </div>
+
+        {/* Stats card — near bottom of hero, rounded, with padding gap below */}
+        <div
+          ref={statsRef}
+          className="relative mx-auto w-full grid grid-cols-2 sm:grid-cols-4 gap-0 rounded-2xl overflow-hidden"
+          style={{
+            background: isDark ? "rgba(3,7,18,0.95)" : "rgba(15,23,42,0.95)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            zIndex: 10,
+            marginTop: "auto",
+            marginBottom: "24px",
+            maxWidth: "900px",
+          }}
+        >
+          {STATS.map((s, i) => (
+            <div
+              key={s.label}
+              style={{
+                borderRight:
+                  i < STATS.length - 1
+                    ? "1px solid rgba(255,255,255,0.08)"
+                    : "none",
+                padding: "24px 16px",
+              }}
+            >
+              <StatCard num={s.num} label={s.label} trigger={statsVisible} />
+            </div>
+          ))}
         </div>
       </section>
 
@@ -746,8 +910,7 @@ export default function Home() {
       <section
         className="w-full py-16 px-4 sm:px-8 lg:px-16"
         style={{
-          background: "rgba(255,255,255,0.05)",
-          backdropFilter: "blur(4px)",
+          background: "transparent",
         }}
       >
         <div className="text-center mb-10">
@@ -789,10 +952,25 @@ export default function Home() {
           {TECH.map((t) => (
             <div
               key={t.title}
-              className="rounded-2xl border border-gray-200/40 dark:border-gray-800/40 p-6 flex flex-col gap-3 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1"
+              className="rounded-2xl p-6 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1"
               style={{
                 background: "rgba(255,255,255,0.06)",
                 backdropFilter: "blur(8px)",
+                // Explicit inline border so theme.css cannot override it
+                border: isDark
+                  ? "1px solid rgba(255,255,255,0.12)"
+                  : "1px solid rgba(31,79,216,0.22)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#3b82f6";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 24px rgba(59,130,246,0.12)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = isDark
+                  ? "rgba(255,255,255,0.12)"
+                  : "rgba(31,79,216,0.22)";
+                e.currentTarget.style.boxShadow = "none";
               }}
             >
               <div className="p-2.5 rounded-xl bg-blue-500/10 w-fit">
@@ -812,49 +990,190 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── CTA BANNER — full width, flush ────────────────────────────── */}
+      {/* ── ABOUT — premium interactive section ──────────────────────── */}
       <section
-        className="w-full py-16 px-4 sm:px-8 lg:px-16"
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          backdropFilter: "blur(4px)",
-        }}
+        className="w-full py-20 px-4 sm:px-8 lg:px-16"
+        style={{ background: "transparent" }}
       >
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-10 sm:p-14 text-center shadow-2xl shadow-blue-700/30 max-w-7xl mx-auto">
+        <div
+          data-about="true"
+          className="about-dark-card relative max-w-7xl mx-auto rounded-3xl overflow-hidden"
+          style={{
+            background: isDark
+              ? "linear-gradient(135deg, #1f4fd8 0%, #1d4ed8 100%)"
+              : "linear-gradient(135deg, #1f4fd8 0%, #1d4ed8 100%)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            backdropFilter: "blur(20px)",
+          }}
+        >
+          {/* Ambient glows */}
           <div
             aria-hidden="true"
-            className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5"
+            style={{
+              position: "absolute",
+              top: "-80px",
+              right: "-80px",
+              width: "320px",
+              height: "320px",
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }}
           />
           <div
             aria-hidden="true"
-            className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-white/5"
+            style={{
+              position: "absolute",
+              bottom: "-60px",
+              left: "-60px",
+              width: "280px",
+              height: "280px",
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }}
           />
-          <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-3">
-            Geodesy &amp; Geodynamics Department — SSGI
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4 relative z-10">
-            About the Department
-          </h2>
-          <p className="text-blue-100 max-w-2xl mx-auto leading-relaxed mb-8 relative z-10 text-sm sm:text-base">
-            Using satellite geodesy, InSAR, GPS, and remote sensing to monitor
-            ground deformation and natural hazards — supporting disaster
-            preparedness and sustainable development across Ethiopia.
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center relative z-10">
-            <Link
-              to="/about"
-              className="inline-flex items-center gap-2 rounded-xl bg-white text-blue-700 hover:bg-blue-50 font-bold px-6 py-3 text-sm transition-all duration-200 hover:-translate-y-0.5 shadow-lg"
+
+          <div className="relative z-10 p-10 sm:p-14 flex flex-col justify-center">
+            <div
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                color: "#60a5fa",
+                marginBottom: "12px",
+              }}
             >
-              Learn More <FiArrowRight size={14} />
-            </Link>
-            <a
-              href="https://disaster.ssgi.gov.et/"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-white/60 text-white hover:bg-white/10 font-semibold px-6 py-3 text-sm transition-all duration-200 hover:-translate-y-0.5"
+              Geodesy &amp; Geodynamics Department — SSGI
+            </div>
+            {/* Using div instead of h2 so theme.css h2 !important rule can't override */}
+            <div
+              role="heading"
+              aria-level="2"
+              style={{
+                fontSize: "clamp(1.8rem, 3vw, 2.75rem)",
+                fontWeight: 800,
+                lineHeight: 1.15,
+                color: "#ffffff",
+                marginBottom: "16px",
+              }}
             >
-              National Geoportal <FiArrowRight size={14} />
-            </a>
+              Protecting Ethiopia
+              <br />
+              <span
+                style={{
+                  background: "linear-gradient(90deg, #f97316, #fbbf24)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  color: "transparent",
+                }}
+              >
+                Through Precision Science
+              </span>
+            </div>
+            <div
+              style={{
+                color: "rgba(209,213,219,0.88)",
+                fontSize: "15px",
+                lineHeight: 1.7,
+                marginBottom: "32px",
+                maxWidth: "620px",
+              }}
+            >
+              Using satellite geodesy, InSAR, GPS, and remote sensing to monitor
+              ground deformation and natural hazards — supporting disaster
+              preparedness and sustainable development across Ethiopia.
+            </div>
+
+            {/* Feature pills */}
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "10px",
+                marginBottom: "36px",
+              }}
+            >
+              {[
+                "InSAR Monitoring",
+                "GPS Networks",
+                "Seismic Analysis",
+                "Early Warning",
+                "Remote Sensing",
+                "Data Portal",
+              ].map((tag) => (
+                <span
+                  key={tag}
+                  style={{
+                    padding: "5px 14px",
+                    borderRadius: "999px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    color: "rgba(209,213,219,0.9)",
+                    background: "rgba(255,255,255,0.06)",
+                    backdropFilter: "blur(4px)",
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            {/* CTA buttons */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+              <Link
+                to="/about"
+                className="inline-flex items-center gap-2 font-bold text-sm transition-all duration-200 hover:-translate-y-0.5"
+                style={{
+                  padding: "11px 24px",
+                  borderRadius: "12px",
+                  background: "#2563eb",
+                  color: "#ffffff",
+                  boxShadow: "0 6px 20px rgba(37,99,235,0.4)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#1d4ed8";
+                  e.currentTarget.style.boxShadow =
+                    "0 8px 28px rgba(37,99,235,0.55)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#2563eb";
+                  e.currentTarget.style.boxShadow =
+                    "0 6px 20px rgba(37,99,235,0.4)";
+                }}
+              >
+                Learn More <FiArrowRight size={14} />
+              </Link>
+              <a
+                href="https://disaster.ssgi.gov.et/"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5"
+                style={{
+                  padding: "11px 24px",
+                  borderRadius: "12px",
+                  border: "1.5px solid rgba(255,255,255,0.25)",
+                  color: "rgba(209,213,219,0.95)",
+                  background: "rgba(255,255,255,0.06)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.5)";
+                  e.currentTarget.style.color = "#ffffff";
+                  e.currentTarget.style.background = "rgba(255,255,255,0.10)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)";
+                  e.currentTarget.style.color = "rgba(209,213,219,0.95)";
+                  e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                }}
+              >
+                National Geoportal <FiArrowRight size={14} />
+              </a>
+            </div>
           </div>
         </div>
       </section>

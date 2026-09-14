@@ -8,6 +8,7 @@ import {
   FiGrid,
   FiEdit2,
   FiCheck,
+  FiCheckCircle,
   FiX,
   FiArrowLeft,
   FiLogOut,

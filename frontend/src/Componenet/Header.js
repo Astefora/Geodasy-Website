@@ -53,17 +53,34 @@ export default function Header() {
   const [hazardOpen, setHazardOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // True when we're on the home page AND haven't scrolled past the hero section.
+  // Used to force dark navbar styling over the dark hero image in light mode.
+  const [overHero, setOverHero] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  // forceDark = true when navbar should show dark styling (dark mode OR light+over hero)
+  const forceDark = isDark || (overHero && !isDark);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 8);
-    window.addEventListener("scroll", fn);
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
+    const update = () => {
+      const y = window.scrollY;
+      setScrolled(y > 8);
+      // Hero section is only on the home page. Its approximate height is ~520px
+      // (pt-24 + content + pb-16 + stats bar). We check against heroRef if available,
+      // or fall back to 560px so we don't import heroRef here.
+      const heroEl = document.querySelector('[data-hero="true"]');
+      const heroBottom = heroEl
+        ? heroEl.getBoundingClientRect().bottom + y
+        : 560;
+      setOverHero(location.pathname === "/" && y < heroBottom - 80);
+    };
+    update();
+    window.addEventListener("scroll", update);
+    return () => window.removeEventListener("scroll", update);
+  }, [location.pathname]);
 
   useEffect(() => {
     const fn = (e) => {
@@ -136,21 +153,36 @@ export default function Header() {
           className={[
             "nav-glass",
             scrolled ? "nav-scrolled" : "",
+            overHero ? "nav-over-hero" : "",
             "flex items-center justify-between gap-2 px-2.5 py-1.5 xl:gap-3 xl:px-4 xl:py-2.5",
-            "rounded-2xl border border-black/20 dark:border-white/30",
-            scrolled
-              ? "shadow-lg dark:shadow-black/40"
-              : "shadow-sm dark:shadow-black/20",
-            "transition-all duration-300",
+            "rounded-2xl transition-all duration-300",
           ].join(" ")}
           style={{
-            background: isDark
-              ? scrolled
-                ? "rgba(3,7,18,0.88)"
-                : "rgba(3,7,18,0.72)"
-              : scrolled
-                ? "rgba(249,250,251,0.92)"
-                : "rgba(249,250,251,0.78)",
+            // Inline background so theme.css div-transparency rules can't override it
+            // overHero is only true in light mode on home page within hero section
+            background:
+              overHero && !isDark
+                ? scrolled
+                  ? "rgba(15,23,42,0.96)" // light + over hero + scrolled
+                  : "rgba(15,23,42,0.90)" // light + over hero
+                : isDark
+                  ? scrolled
+                    ? "rgba(3,7,18,0.92)" // dark + scrolled (unchanged)
+                    : "rgba(3,7,18,0.88)" // dark (unchanged)
+                  : scrolled
+                    ? "rgba(249,250,251,0.96)" // light + scrolled
+                    : "rgba(249,250,251,0.90)", // light default
+            border:
+              (overHero && !isDark) || isDark
+                ? "1px solid rgba(255,255,255,0.15)"
+                : "1px solid rgba(0,0,0,0.14)",
+            boxShadow: scrolled
+              ? (overHero && !isDark) || isDark
+                ? "0 8px 32px rgba(0,0,0,0.5)"
+                : "0 0 0 1.5px rgba(31,79,216,0.45), 0 8px 32px rgba(31,79,216,0.12)"
+              : (overHero && !isDark) || isDark
+                ? "0 2px 16px rgba(0,0,0,0.35)"
+                : "0 0 0 1.5px rgba(31,79,216,0.35), 0 4px 24px rgba(31,79,216,0.08)",
           }}
         >
           {/* Logo */}
@@ -163,7 +195,10 @@ export default function Header() {
               alt="Logo"
               className="w-7 h-7 xl:w-9 xl:h-9 rounded-xl flex-shrink-0 group-hover:scale-105 transition-transform duration-150"
             />
-            <span className="hidden sm:block font-extrabold text-base tracking-tight text-[#1f4fd8] dark:text-[#00aaff] whitespace-nowrap">
+            <span
+              className="hidden sm:block font-extrabold text-base tracking-tight whitespace-nowrap"
+              style={{ color: forceDark ? "#60a5fa" : "#1f4fd8" }}
+            >
               <span className="lg:hidden">DMC</span>
               <span className="hidden lg:inline">
                 Disaster Monitoring Center
@@ -175,10 +210,12 @@ export default function Header() {
           <nav
             className="hidden md:flex items-center gap-0 rounded-full px-0.5 py-0.5 xl:gap-0.5 xl:px-1.5 xl:py-1 flex-shrink-0"
             style={{
-              background: isDark
-                ? "rgba(72, 63, 63, 0.95)"
+              background: forceDark
+                ? "rgba(30,41,59,0.95)" /* slate-800 inner pill */
                 : "rgba(0,0,0,0.08)",
-              border: isDark ? "none" : "1px solid rgba(0,0,0,0.08)",
+              border: forceDark
+                ? "1px solid rgba(255,255,255,0.08)"
+                : "1px solid rgba(0,0,0,0.08)",
             }}
           >
             {navItems.map((item) => {
@@ -195,36 +232,41 @@ export default function Header() {
                     className={[
                       "flex items-center gap-1 px-2 py-1.5 rounded-full text-xs font-medium xl:gap-1.5 xl:px-3.5 xl:text-sm",
                       "transition-all duration-150 whitespace-nowrap border-none cursor-pointer",
-                      active
-                        ? "font-bold shadow-sm"
-                        : "bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/6 dark:hover:bg-white/8",
+                      active ? "font-bold shadow-sm" : "bg-transparent",
                     ].join(" ")}
                     style={
                       active
                         ? {
-                            backgroundColor: isDark ? "#e5e7eb" : "#111827",
-                            color: isDark ? "#111827" : "#ffffff",
+                            backgroundColor: forceDark ? "#e5e7eb" : "#111827",
+                            color: forceDark ? "#111827" : "#ffffff",
                           }
-                        : {}
+                        : {
+                            color: forceDark ? "#d1d5db" : "#4b5563",
+                          }
                     }
                   >
                     <Icon
                       size={13}
-                      className={
+                      className={active ? "text-inherit" : ""}
+                      style={
                         active
-                          ? "text-inherit"
-                          : "text-gray-400 dark:text-gray-500"
+                          ? {}
+                          : { color: forceDark ? "#9ca3af" : "#6b7280" }
                       }
                     />
                     {item.label}
                     {item.hasDropdown && (
                       <FiChevronDown
                         size={12}
+                        style={{
+                          color: active
+                            ? "inherit"
+                            : forceDark
+                              ? "#9ca3af"
+                              : "#6b7280",
+                        }}
                         className={[
                           "transition-transform duration-200",
-                          active
-                            ? "text-inherit"
-                            : "text-gray-400 dark:text-gray-500",
                           hazardOpen ? "rotate-180" : "rotate-0",
                         ].join(" ")}
                       />
@@ -233,7 +275,7 @@ export default function Header() {
 
                   {/* Hazard dropdown */}
                   {item.hasDropdown && hazardOpen && (
-                    <div className="absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl p-2 min-w-[260px] shadow-xl grid grid-cols-2 gap-1">
+                    <div className="hazard-dropdown absolute top-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-2xl p-2 min-w-[260px] shadow-xl grid grid-cols-2 gap-1">
                       {hazards.map((h) => {
                         const hActive = location.pathname === h.path;
                         return (
@@ -246,10 +288,40 @@ export default function Header() {
                             className={[
                               "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium w-full",
                               "transition-colors duration-150 text-left border-none cursor-pointer",
-                              hActive
-                                ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold"
-                                : "bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
-                            ].join(" ")}
+                              !(overHero && !isDark) &&
+                                (hActive
+                                  ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold"
+                                  : "bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"),
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                            style={
+                              overHero && !isDark
+                                ? { color: hActive ? "#93c5fd" : "#e2e8f0" }
+                                : {}
+                            }
+                            onMouseEnter={(e) => {
+                              if (overHero && !isDark) {
+                                e.currentTarget.style.backgroundColor =
+                                  "rgba(255,255,255,0.10)";
+                                e.currentTarget.style.color = "#ffffff";
+                              } else if (!isDark) {
+                                e.currentTarget.style.backgroundColor =
+                                  "#f3f4f6";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (overHero && !isDark) {
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
+                                e.currentTarget.style.color = hActive
+                                  ? "#93c5fd"
+                                  : "#e2e8f0";
+                              } else if (!isDark) {
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
+                              }
+                            }}
                           >
                             <img
                               src={h.img}

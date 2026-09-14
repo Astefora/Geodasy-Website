@@ -78,8 +78,11 @@ function VerifyEmail() {
       });
       await res.json();
       setResendStatus("sent");
+      // Reset back to idle after 3s so user can resend again if needed
+      setTimeout(() => setResendStatus("idle"), 3000);
     } catch {
       setResendStatus("error");
+      setTimeout(() => setResendStatus("idle"), 3000);
     }
   };
 

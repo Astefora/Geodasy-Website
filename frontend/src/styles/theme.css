@@ -4,6 +4,7 @@ body[data-theme="dark"] {
   --bg-primary: #030712;
   --bg-secondary: #111;
   --bg-card: #1a1a1a;
+  --bg-card-rgb: 26, 26, 26;
   --bg-card-alt: #222;
   --bg-input: #111;
   --border-color: #333;
@@ -24,6 +25,7 @@ body[data-theme="light"] {
   --bg-primary: #f9fafb;
   --bg-secondary: #f5f5f5;
   --bg-card: #ffffff;
+  --bg-card-rgb: 255, 255, 255;
   --bg-card-alt: #f8f9fa;
   --bg-input: #ffffff;
   --border-color: #d0d0d0;
@@ -374,12 +376,17 @@ body[data-theme="light"] .auth-btn {
 }
 
 /* ── Fix: any remaining white/light text that's invisible ─────────────────── */
-/* Exclude buttons — white text on buttons means they have a colored background (intentional) */
+/* Exclude buttons, spans, about-dark-card, and hero section — white text there is intentional */
 body[data-theme="light"]
-  :not(button):not(span)[style*="color: rgb(255, 255, 255)"] {
+  :not(button):not(span):not(.about-dark-card):not(.about-dark-card *):not(
+    section[data-hero="true"]
+  ):not(section[data-hero="true"] *)[style*="color: rgb(255, 255, 255)"] {
   color: #1a1a1a !important;
 }
-body[data-theme="light"] :not(button):not(span)[style*="color: white"] {
+body[data-theme="light"]
+  :not(button):not(span):not(.about-dark-card):not(.about-dark-card *):not(
+    section[data-hero="true"]
+  ):not(section[data-hero="true"] *)[style*="color: white"] {
   color: #1a1a1a !important;
 }
 body[data-theme="light"] [style*="color: rgb(170, 170, 170)"] {
@@ -692,6 +699,50 @@ body[data-theme="light"] div[style*="background-color: rgb(240, 238, 255)"] h2 {
   color: #3949ab !important;
 }
 
+/* ── Hero section — ALL elements must show white/light on the dark photo ──
+   These rules are placed AFTER the broad overrides above so they win.
+   Every selector uses !important to beat the earlier rules.              */
+
+body[data-theme="light"] section[data-hero="true"],
+body[data-theme="light"] section[data-hero="true"] *,
+body[data-theme="light"] section[data-hero="true"] a,
+body[data-theme="light"] section[data-hero="true"] a:link,
+body[data-theme="light"] section[data-hero="true"] a:visited,
+body[data-theme="light"] section[data-hero="true"] span,
+body[data-theme="light"] section[data-hero="true"] p,
+body[data-theme="light"] section[data-hero="true"] h1,
+body[data-theme="light"] section[data-hero="true"] h2,
+body[data-theme="light"] section[data-hero="true"] h3,
+body[data-theme="light"] section[data-hero="true"] div,
+body[data-theme="light"] section[data-hero="true"] label {
+  color: inherit !important;
+}
+
+/* Root of hero — start the cascade with white */
+body[data-theme="light"] section[data-hero="true"] {
+  color: #ffffff !important;
+}
+
+/* Keep orange gradient text transparent */
+body[data-theme="light"] section[data-hero="true"] .bg-clip-text {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* ── About dark card — always white text regardless of theme ─────────────
+   .about-dark-card has a dark gradient background in both light and dark
+   mode, so all text must be white. This is placed last in the file to
+   win all specificity battles.                                           */
+body[data-theme="light"] .about-dark-card,
+body[data-theme="light"] .about-dark-card div,
+body[data-theme="light"] .about-dark-card span,
+body[data-theme="light"] .about-dark-card a {
+  color: inherit !important;
+}
+body[data-theme="light"] .about-dark-card {
+  color: #ffffff !important;
+}
+
 /* ── Geoportal button — always white text on blue background ─────────────── */
 body[data-theme="light"] a.geoportal-btn,
 body[data-theme="light"] a.geoportal-btn span,
@@ -776,4 +827,59 @@ body[data-theme="light"] .bg-amber-100 {
 }
 body[data-theme="light"] .bg-red-100 {
   background-color: rgb(254 226 226) !important;
+}
+/* Footer transparency — preserve existing theme colors */
+body[data-theme="dark"] footer {
+  background-color: rgba(36, 36, 36, 0.456) !important;
+}
+
+body[data-theme="light"] footer {
+  background-color: rgba(255, 255, 255, 0.171) !important;
+}
+
+/* ── About CTA bar — force white on all child links/text ─────────────────
+   body[data-theme="light"] a { color: var(--accent-brand) !important } beats
+   inline styles on <a>/<Link>. This rule has higher specificity AND comes
+   later, so it wins. Placed at the very end of the file.                */
+body[data-theme="light"] .about-cta-bar a,
+body[data-theme="light"] .about-cta-bar a:link,
+body[data-theme="light"] .about-cta-bar a:visited,
+body[data-theme="light"] .about-cta-bar div,
+body[data-theme="light"] .about-cta-bar span,
+body[data-theme="light"] .about-cta-bar p {
+  color: inherit !important;
+}
+body[data-theme="light"] .about-cta-bar {
+  color: #ffffff !important;
+}
+/* Research CTA button - text color only */
+body[data-theme="light"] .about-cta-bar .research-cta-button {
+  color: #ffffff !important;
+}
+
+body[data-theme="dark"] .about-cta-bar .research-cta-button {
+  color: #ffffff !important;
+}
+
+/* ── About page tab buttons — active tab must always show white text ─────
+   Active tab has blue background; text must be white in both themes.
+   button[style*="background: rgb(31, 79, 216)"] catches the accent-blue.   */
+body[data-theme="light"] button[style*="background: rgb(31, 79, 216)"],
+body[data-theme="light"] button[style*="background-color: rgb(31, 79, 216)"] {
+  color: #ffffff !important;
+}
+body[data-theme="light"] button[style*="background: var(--accent-blue)"] {
+  color: #ffffff !important;
+}
+
+/* ── About tab active button — always white text on blue bg ──────────────── */
+body[data-theme="light"] button.about-tab-active,
+body[data-theme="dark"] button.about-tab-active {
+  color: #ffffff !important;
+}
+
+/* ── About CTA Research Portal button — force white text ─────────────────── */
+body[data-theme="light"] a.research-cta-button,
+body[data-theme="light"] .research-cta-button {
+  color: #ffffff !important;
 }
