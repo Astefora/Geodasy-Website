@@ -41,10 +41,13 @@ const uploadSchema = new mongoose.Schema(
     // Uploader name / username
     uploadedBy: { type: String, default: "Anonymous", trim: true },
 
+    // Geographic scope — Ethiopian region the dataset covers
+    region: { type: String, default: "Ethiopia", trim: true },
+
     // Admin moderation status before local hazard pages can display the upload
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "changes_requested"],
       default: "pending",
     },
 
@@ -52,6 +55,9 @@ const uploadSchema = new mongoose.Schema(
     approvedAt: { type: Date, default: null },
     rejectedBy: { type: String, default: "", trim: true },
     rejectedAt: { type: Date, default: null },
+
+    // Admin note for "Request Changes" workflow step
+    reviewNote: { type: String, default: "", trim: true },
 
     // Upload timestamp
     date: { type: Date, default: () => new Date() },

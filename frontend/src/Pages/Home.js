@@ -640,9 +640,97 @@ export default function Home() {
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [entered, setEntered] = useState(false);
 
+  // ── Dynamic CMS Content with fallbacks ──────────────────────────────────
+  const [statsList, setStatsList] = useState(STATS);
+  const [hazardsList, setHazardsList] = useState(HAZARDS);
+  const [heroData, setHeroData] = useState({
+    badge: "Live Monitoring — SSGI Ethiopia",
+    subtitle:
+      "Real-time satellite monitoring of natural hazards across Ethiopia — earthquake fault lines, volcanic deformation, floods, fires, droughts and landslides.",
+    aboutSummary:
+      "Using satellite geodesy, InSAR, GPS, and remote sensing to monitor ground deformation and natural hazards — supporting disaster preparedness and sustainable development across Ethiopia.",
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/api/content")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted || !data) return;
+        const stats = data.stats || data.content?.stats;
+        const hazards = data.hazards || data.content?.hazards;
+        const hero = data.hero || data.content?.hero;
+
+        if (stats && Array.isArray(stats) && stats.length > 0) {
+          const active = stats
+            .filter((s) => s.is_active !== false)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+          if (active.length > 0) {
+            setStatsList(active);
+          }
+        }
+        if (hazards && Array.isArray(hazards) && hazards.length > 0) {
+          setHazardsList((prev) =>
+            prev.map((h) => {
+              const match = hazards.find(
+                (dh) =>
+                  dh.id?.toLowerCase() === h.title.toLowerCase() ||
+                  dh.title?.toLowerCase() === h.title.toLowerCase(),
+              );
+              if (match) {
+                return {
+                  ...h,
+                  title: match.title || h.title,
+                  desc: match.desc || h.desc,
+                  path: match.path || h.path,
+                };
+              }
+              return h;
+            }),
+          );
+        }
+        if (hero) {
+          setHeroData((prev) => ({
+            ...prev,
+            badge: hero.badge || prev.badge,
+            subtitle: hero.subtitle || prev.subtitle,
+            aboutSummary: hero.aboutSummary || prev.aboutSummary,
+          }));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     const id = requestAnimationFrame(() => setEntered(true));
     return () => cancelAnimationFrame(id);
+  }, []);
+
+  /* Scroll to #hazards when navigated from About page via "Explore Hazards" */
+  useEffect(() => {
+    const target = sessionStorage.getItem("scrollTo");
+    if (target === "hazards") {
+      sessionStorage.removeItem("scrollTo");
+      // Use multiple rAF to wait for full layout paint, then scroll
+      const doScroll = () => {
+        const el = document.getElementById("hazards");
+        if (el) {
+          const navbarHeight = 80;
+          const y =
+            el.getBoundingClientRect().top + window.scrollY - navbarHeight;
+          window.scrollTo({ top: y, behavior: "smooth" });
+        }
+      };
+      // Two-phase: wait for DOM paint (rAF) + extra settle time for images/fonts
+      let t;
+      requestAnimationFrame(() => {
+        t = setTimeout(doScroll, 600);
+      });
+      return () => clearTimeout(t);
+    }
   }, []);
 
   useEffect(() => {
@@ -739,10 +827,10 @@ export default function Home() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
               </span>
               <span
-                className="text-xs font-semibold tracking-widest uppercase"
+                className="hero-badge text-xs font-semibold tracking-widest uppercase"
                 style={{ color: "#fdba74" }}
               >
-                Live Monitoring — SSGI Ethiopia
+                {heroData.badge}
               </span>
             </div>
           </div>
@@ -765,24 +853,23 @@ export default function Home() {
 
           {/* Subtitle */}
           <p
-            className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10"
+            className="hero-subtitle text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10"
             style={{ color: "rgba(209,213,219,0.95)" }}
           >
-            Real-time satellite monitoring of natural hazards across Ethiopia —
-            earthquake fault lines, volcanic deformation, floods, fires,
-            droughts and landslides.
+            {heroData.subtitle}
           </p>
 
           {/* CTA buttons — pill style */}
           <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-            <Link
-              to="/hazards/earthquake"
+            <a
+              href="#hazards"
               className="inline-flex items-center gap-2 font-semibold px-6 py-2.5 text-sm sm:text-base transition-all duration-200 hover:-translate-y-0.5"
               style={{
                 borderRadius: "999px",
                 border: "1.5px solid rgba(255,255,255,0.50)",
                 background: "rgba(255,255,255,0.22)",
                 color: "#f1f5f9",
+                textDecoration: "none",
                 backdropFilter: "blur(8px)",
                 boxShadow: "0 4px 20px rgba(0,0,0,0.22)",
               }}
@@ -798,7 +885,7 @@ export default function Home() {
               }}
             >
               <FiMap size={15} /> Explore Hazards
-            </Link>
+            </a>
 
             <Link
               to="/early-warning"
@@ -889,12 +976,12 @@ export default function Home() {
             maxWidth: "900px",
           }}
         >
-          {STATS.map((s, i) => (
+          {statsList.map((s, i) => (
             <div
-              key={s.label}
+              key={s.label || i}
               style={{
                 borderRight:
-                  i < STATS.length - 1
+                  i < statsList.length - 1
                     ? "1px solid rgba(255,255,255,0.08)"
                     : "none",
                 padding: "24px 16px",
@@ -908,6 +995,7 @@ export default function Home() {
 
       {/* ── HAZARD CARDS — full width, flush ──────────────────────────── */}
       <section
+        id="hazards"
         className="w-full py-16 px-4 sm:px-8 lg:px-16"
         style={{
           background: "transparent",
@@ -926,8 +1014,8 @@ export default function Home() {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
-          {HAZARDS.map((h, i) => (
-            <HazardCard key={h.title} h={h} index={i} />
+          {hazardsList.map((h, i) => (
+            <HazardCard key={h.title || i} h={h} index={i} />
           ))}
         </div>
       </section>
@@ -1083,9 +1171,7 @@ export default function Home() {
                 maxWidth: "620px",
               }}
             >
-              Using satellite geodesy, InSAR, GPS, and remote sensing to monitor
-              ground deformation and natural hazards — supporting disaster
-              preparedness and sustainable development across Ethiopia.
+              {heroData.aboutSummary}
             </div>
 
             {/* Feature pills */}

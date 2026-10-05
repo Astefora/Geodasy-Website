@@ -1,27 +1,57 @@
 /* GlobalDataCard.css — shared controls + theme overrides for hazard pages */
 
 .date-input-wrap {
-  flex: 1;
+  flex: 1 1 135px;
   position: relative;
-  min-width: 0;
+  min-width: 120px;
 }
 
 .date-input-wrap input[type="date"] {
   width: 100%;
   box-sizing: border-box;
-  padding: 10px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-input);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 12.5px;
+  font-family: inherit;
+  font-weight: 600;
   color-scheme: inherit;
   cursor: pointer;
+  height: 36px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .date-input-wrap input[type="date"]:focus {
   outline: none;
-  border-color: var(--accent-brand);
+  border-color: var(--accent-brand, #1f4fd8);
+  box-shadow: 0 0 0 3px rgba(31, 79, 216, 0.15);
+}
+
+.date-input-wrap input[type="text"],
+.date-input-wrap select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-family: inherit;
+  font-weight: 500;
+  height: 36px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.date-input-wrap input[type="text"]:focus,
+.date-input-wrap select:focus {
+  outline: none;
+  border-color: var(--accent-brand, #1f4fd8);
+  box-shadow: 0 0 0 3px rgba(31, 79, 216, 0.15);
 }
 
 /* Download CSV button — compact */
@@ -301,7 +331,10 @@ body[data-theme="light"] .frame-btn.active {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
   white-space: nowrap;
   flex-shrink: 0;
   letter-spacing: 0.5px;
@@ -396,7 +429,6 @@ body[data-theme="light"] .fire-days-date-input:focus {
   border-color: #0077cc !important;
 }
 
-
 .fire-days-dropdown-list {
   max-height: 260px;
   overflow-y: auto;
@@ -423,7 +455,9 @@ body[data-theme="light"] .fire-days-date-input:focus {
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 
 .fire-days-dropdown-item:hover {
@@ -474,4 +508,328 @@ body[data-theme="light"] .fire-days-dropdown-item.special {
   border-color: #b3d4f0 !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREMIUM GIS CONTROLS — Global Hazard Data toolbar
+   Applied to Fire page (and shared patterns across all hazard pages)
+   ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── Toolbar wrapper ─────────────────────────────────────────────────────── */
+.global-fire-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+/* ── Segmented time-range control (TODAY / 24 HRS / 7 DAYS) ─────────────── */
+.time-range-control {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+.time-range-btn {
+  padding: 5px 13px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    color 0.18s,
+    box-shadow 0.18s;
+  white-space: nowrap;
+  outline: none;
+  line-height: 1;
+}
+
+.time-range-btn:hover:not(.active) {
+  background: rgba(31, 79, 216, 0.07);
+  color: var(--text-primary);
+}
+
+.time-range-btn.active {
+  background: var(--accent-brand, #1f4fd8);
+  color: #ffffff;
+  box-shadow: 0 1px 6px rgba(31, 79, 216, 0.3);
+}
+
+/* Light mode */
+body[data-theme="light"] .time-range-control {
+  background: #f8f9fc !important;
+  border-color: #dde1e9 !important;
+}
+
+body[data-theme="light"] .time-range-btn.active {
+  background: #1f4fd8 !important;
+  color: #fff !important;
+}
+
+/* ── Calendar / custom date button ──────────────────────────────────────── */
+.date-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.18s,
+    background 0.18s,
+    color 0.18s,
+    box-shadow 0.18s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  outline: none;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.date-filter-btn:hover {
+  border-color: rgba(31, 79, 216, 0.4);
+  color: var(--text-primary);
+  background: rgba(31, 79, 216, 0.04);
+}
+
+.date-filter-btn.active {
+  border-color: var(--accent-brand, #1f4fd8);
+  color: var(--accent-brand, #1f4fd8);
+  background: rgba(31, 79, 216, 0.08);
+  box-shadow: 0 1px 6px rgba(31, 79, 216, 0.15);
+}
+
+.date-filter-btn svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* ── Download CSV premium button ─────────────────────────────────────────── */
+.download-csv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: var(--accent-brand, #1f4fd8);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    box-shadow 0.18s,
+    transform 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  outline: none;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(31, 79, 216, 0.28);
+  margin-left: auto;
+}
+
+.download-csv-btn:hover:not(:disabled) {
+  background: #1a42b8;
+  box-shadow: 0 4px 14px rgba(31, 79, 216, 0.36);
+  transform: translateY(-1px);
+}
+
+.download-csv-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(31, 79, 216, 0.22);
+}
+
+.download-csv-btn:disabled {
+  background: var(--text-muted);
+  box-shadow: none;
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.download-csv-btn svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+/* ── Map type segmented control ──────────────────────────────────────────── */
+.map-type-control {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(10, 10, 18, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+.map-type-btn {
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    color 0.18s,
+    box-shadow 0.18s;
+  white-space: nowrap;
+  outline: none;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.map-type-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.map-type-btn.active {
+  background: var(--accent-brand, #1f4fd8);
+  color: #ffffff;
+  box-shadow: 0 1px 5px rgba(31, 79, 216, 0.45);
+}
+
+/* Light mode map type control — still overlaid on map, keep dark glass */
+body[data-theme="light"] .map-type-control {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+body[data-theme="light"] .map-type-btn {
+  color: rgba(30, 30, 50, 0.55) !important;
+}
+
+body[data-theme="light"] .map-type-btn:hover:not(.active) {
+  background: rgba(31, 79, 216, 0.08) !important;
+  color: rgba(30, 30, 50, 0.85) !important;
+}
+
+body[data-theme="light"] .map-type-btn.active {
+  background: #1f4fd8 !important;
+  color: #fff !important;
+}
+
+/* ── Dropdown header label ───────────────────────────────────────────────── */
+.fire-days-dropdown-header-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+
+/* ── Download CSV button — force white text in light mode ─────────────────
+   The broad body[data-theme="light"] color rules override the button text.
+   This rule restores white text on the blue button in both themes.          */
+body[data-theme="light"] .download-csv-btn,
+body[data-theme="light"] .download-csv-btn span,
+body[data-theme="light"] .download-csv-btn svg {
+  color: #ffffff !important;
+}
+body[data-theme="light"] .download-csv-btn:disabled {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ════════════════ RESPONSIVE TOOLBAR OVERRIDES ════════════════════════════ */
+@media (max-width: 640px) {
+  .global-fire-toolbar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 8px 12px !important;
+  }
+  .date-input-wrap {
+    flex: 1 1 calc(50% - 6px) !important;
+    min-width: 120px !important;
+  }
+  .date-input-wrap input[type="date"],
+  .date-input-wrap input[type="text"],
+  .date-input-wrap select {
+    font-size: 12px !important;
+    padding: 6px 8px !important;
+    height: 34px !important;
+  }
+  .download-csv-btn {
+    flex: 1 1 auto !important;
+    margin-left: 0 !important;
+    height: 34px !important;
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+  }
+  .time-range-control {
+    width: 100% !important;
+    display: flex !important;
+  }
+  .time-range-btn {
+    flex: 1 !important;
+    text-align: center !important;
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+  }
+  .date-filter-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 34px !important;
+  }
+  .fire-days-dropdown {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: unset !important;
+  }
+}
+
+@media (max-width: 425px) {
+  .global-fire-toolbar {
+    gap: 6px !important;
+    padding: 8px 10px !important;
+  }
+  .date-input-wrap {
+    flex: 1 1 calc(50% - 4px) !important;
+    min-width: 110px !important;
+  }
+  .date-input-wrap input[type="date"] {
+    font-size: 11.5px !important;
+    padding: 5px 6px !important;
+    letter-spacing: -0.02em !important;
+  }
+  .date-input-wrap[style*="minWidth"],
+  .date-input-wrap[style*="min-width"] {
+    min-width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+  .download-csv-btn {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    justify-content: center !important;
+  }
+}

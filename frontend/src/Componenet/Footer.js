@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   FiMail,
@@ -131,6 +131,44 @@ export default function Footer() {
   const [email, setEmail] = useState("");
   const [subStatus, setSubStatus] = useState("idle"); // idle | sending | sent | error
   const [subError, setSubError] = useState("");
+
+  // ── Dynamic CMS Content with fallbacks ──────────────────────────────────
+  const [dataSources, setDataSources] = useState(DATA_SOURCES);
+  const [contactInfo, setContactInfo] = useState({
+    address: "Addis Ababa, Ethiopia\nEthiopian Space Science & Geospatial Institute",
+    phone: "+251 (0) 11 XXX XXXX",
+    email: "geodesy@ssgi.gov.et",
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/api/content")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted || !data) return;
+        const footer = data.footer || data.content?.footer;
+        if (!footer) return;
+        if (footer.dataSources && Array.isArray(footer.dataSources)) {
+          const active = footer.dataSources.filter(
+            (s) => s.is_active !== false,
+          );
+          if (active.length > 0) {
+            setDataSources(active);
+          }
+        }
+        setContactInfo({
+          address:
+            footer.address ||
+            "Addis Ababa, Ethiopia\nEthiopian Space Science & Geospatial Institute",
+          phone: footer.phone || "+251 (0) 11 XXX XXXX",
+          email: footer.email || "geodesy@ssgi.gov.et",
+        });
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
@@ -347,7 +385,7 @@ export default function Footer() {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "10px" }}
           >
-            {DATA_SOURCES.map(({ label, href }) => (
+            {dataSources.map(({ label, href }) => (
               <a
                 key={label}
                 href={href}
@@ -388,10 +426,10 @@ export default function Footer() {
             {[
               {
                 Icon: FiMapPin,
-                text: "Addis Ababa, Ethiopia\nEthiopian Space Science & Geospatial Institute",
+                text: contactInfo.address,
               },
-              { Icon: FiPhone, text: "+251 (0) 11 XXX XXXX" },
-              { Icon: FiMail, text: "geodesy@ssgi.gov.et" },
+              { Icon: FiPhone, text: contactInfo.phone },
+              { Icon: FiMail, text: contactInfo.email },
             ].map(({ Icon, text }) => (
               <div
                 key={text}

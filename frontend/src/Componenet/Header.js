@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../ThemeContext";
+import "../styles/Header.css";
 import {
   FiHome,
   FiInfo,
@@ -11,7 +12,10 @@ import {
   FiActivity,
   FiMenu,
   FiX,
+  FiBookOpen,
 } from "react-icons/fi";
+
+import { WARNING_COUNT, fetchLiveMultiHazardWarningStats } from "../hazardData";
 
 const logo = "/ggd_logo.png";
 
@@ -44,6 +48,7 @@ const hazards = [
 const navItems = [
   { label: "Home", path: "/", icon: FiHome },
   { label: "About", path: "/about", icon: FiInfo },
+  { label: "Research", path: "/research", icon: FiBookOpen },
   { label: "Early Warning", path: "/early-warning", icon: FiAlertTriangle },
   { label: "Hazards", path: "/hazards", icon: FiActivity, hasDropdown: true },
   { label: "Dashboard", path: "/dashboard", icon: FiLayout, auth: true },
@@ -56,6 +61,7 @@ export default function Header() {
   // True when we're on the home page AND haven't scrolled past the hero section.
   // Used to force dark navbar styling over the dark hero image in light mode.
   const [overHero, setOverHero] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef(null);
@@ -63,6 +69,59 @@ export default function Header() {
   const isDark = theme === "dark";
   // forceDark = true when navbar should show dark styling (dark mode OR light+over hero)
   const forceDark = isDark || (overHero && !isDark);
+
+  // Track window width for tablet title shortening
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Tablet = desktop nav visible but not enough room for full title (769–900px)
+  const isTablet = windowWidth >= 769 && windowWidth <= 900;
+  const headerTitle = isTablet ? "DMC" : "Disaster Monitoring Center";
+
+  /* Real-time live multi-hazard warning count synchronized across site */
+  const [warningCount, setWarningCount] = useState(() => {
+    try {
+      const cached = localStorage.getItem("ew_live_warning_count");
+      if (cached !== null && !isNaN(parseInt(cached, 10))) {
+        return parseInt(cached, 10);
+      }
+    } catch {}
+    return WARNING_COUNT;
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // Listen to real-time updates dispatched from the Early Warning page
+    const handleEwUpdate = (e) => {
+      if (typeof e.detail === "number" && isMounted) {
+        setWarningCount(e.detail);
+      }
+    };
+    window.addEventListener("ew_warning_count_updated", handleEwUpdate);
+
+    async function fetchRealWarningCount() {
+      try {
+        const count = await fetchLiveMultiHazardWarningStats();
+        if (isMounted) {
+          setWarningCount(count);
+        }
+      } catch {
+        if (isMounted) setWarningCount(WARNING_COUNT);
+      }
+    }
+
+    fetchRealWarningCount();
+    const interval = setInterval(fetchRealWarningCount, 60000); // refresh every 1 min
+    return () => {
+      isMounted = false;
+      window.removeEventListener("ew_warning_count_updated", handleEwUpdate);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     const update = () => {
@@ -84,12 +143,15 @@ export default function Header() {
 
   useEffect(() => {
     const fn = (e) => {
+      // Don't close hazard dropdown on outside click when mobile drawer is open
+      // (the mobile drawer is not inside dropdownRef, so every tap would close it)
+      if (mobileOpen) return;
       if (dropdownRef.current && !dropdownRef.current.contains(e.target))
         setHazardOpen(false);
     };
     document.addEventListener("mousedown", fn);
     return () => document.removeEventListener("mousedown", fn);
-  }, []);
+  }, [mobileOpen]);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -146,7 +208,13 @@ export default function Header() {
       */}
       <nav
         className="fixed"
-        style={{ top: "12px", left: "8px", right: "8px", zIndex: 9000 }}
+        style={{
+          top: "12px",
+          left: "8px",
+          right: "8px",
+          zIndex: 9000,
+          boxSizing: "border-box",
+        }}
       >
         {/* Glass pill */}
         <div
@@ -155,7 +223,7 @@ export default function Header() {
             scrolled ? "nav-scrolled" : "",
             overHero ? "nav-over-hero" : "",
             "flex items-center justify-between gap-2 px-2.5 py-1.5 xl:gap-3 xl:px-4 xl:py-2.5",
-            "rounded-2xl transition-all duration-300",
+            "rounded-2xl transition-all duration-300 w-full max-w-full box-border",
           ].join(" ")}
           style={{
             // Inline background so theme.css div-transparency rules can't override it
@@ -188,7 +256,7 @@ export default function Header() {
           {/* Logo */}
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-2.5 flex-shrink-0 bg-transparent border-none cursor-pointer p-0 group"
+            className="flex items-center gap-2 sm:gap-2.5 min-w-0 bg-transparent border-none cursor-pointer p-0 group"
           >
             <img
               src={logo}
@@ -196,19 +264,16 @@ export default function Header() {
               className="w-7 h-7 xl:w-9 xl:h-9 rounded-xl flex-shrink-0 group-hover:scale-105 transition-transform duration-150"
             />
             <span
-              className="hidden sm:block font-extrabold text-base tracking-tight whitespace-nowrap"
+              className="header-title font-extrabold tracking-tight whitespace-nowrap truncate min-w-0 text-xs sm:text-sm md:text-base"
               style={{ color: forceDark ? "#60a5fa" : "#1f4fd8" }}
             >
-              <span className="lg:hidden">DMC</span>
-              <span className="hidden lg:inline">
-                Disaster Monitoring Center
-              </span>
+              {headerTitle}
             </span>
           </button>
 
           {/* Desktop nav pill-within-pill */}
           <nav
-            className="hidden md:flex items-center gap-0 rounded-full px-0.5 py-0.5 xl:gap-0.5 xl:px-1.5 xl:py-1 flex-shrink-0"
+            className="header-desktop-nav hidden md:flex items-center gap-0 rounded-full px-0.5 py-0.5 xl:gap-0.5 xl:px-1.5 xl:py-1 flex-shrink-0"
             style={{
               background: forceDark
                 ? "rgba(30,41,59,0.95)" /* slate-800 inner pill */
@@ -226,7 +291,37 @@ export default function Header() {
                   key={item.label}
                   ref={item.hasDropdown ? dropdownRef : undefined}
                   className="relative"
+                  style={{ position: "relative" }}
                 >
+                  {/* Warning badge — top-right of the button, absolutely positioned */}
+                  {item.path === "/early-warning" && warningCount > 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "-5px",
+                        right: "-5px",
+                        zIndex: 10,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: "17px",
+                        height: "17px",
+                        padding: "0 4px",
+                        borderRadius: "999px",
+                        background: "#ef4444",
+                        color: "#ffffff",
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        lineHeight: 1,
+                        letterSpacing: 0,
+                        pointerEvents: "none",
+                        boxShadow: "0 0 0 2px rgba(239,68,68,0.30)",
+                        animation: "navBadgePulse 2s ease-in-out infinite",
+                      }}
+                    >
+                      {warningCount}
+                    </span>
+                  )}
                   <button
                     onClick={() => handleNav(item)}
                     className={[
@@ -347,7 +442,7 @@ export default function Header() {
               href="https://disaster.ssgi.gov.et/"
               target="_blank"
               rel="noreferrer"
-              className="hidden sm:flex items-center gap-1 text-white font-semibold no-underline rounded-full whitespace-nowrap transition-all duration-200 hover:-translate-y-px px-2.5 py-1.5 text-xs lg:gap-1.5 lg:px-4 lg:py-2 lg:text-sm"
+              className="geoportal-hide-mobile geoportal-btn hidden sm:flex items-center gap-1 text-white font-semibold no-underline rounded-full whitespace-nowrap transition-all duration-200 hover:-translate-y-px px-2.5 py-1.5 text-xs lg:gap-1.5 lg:px-4 lg:py-2 lg:text-sm"
               style={{
                 background: "#1f4fd8",
                 boxShadow: "0 2px 10px rgba(31,79,216,0.40)",
@@ -358,7 +453,7 @@ export default function Header() {
             </a>
 
             <button
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 dark:border-gray-700 bg-transparent cursor-pointer text-gray-600 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/8 transition-colors"
+              className="header-hamburger md:hidden flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 dark:border-gray-700 bg-transparent cursor-pointer text-gray-600 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/8 transition-colors flex-shrink-0"
               onClick={() => setMobileOpen((o) => !o)}
               aria-label="Toggle menu"
             >
@@ -370,21 +465,57 @@ export default function Header() {
 
       {/* Mobile drawer — sits inside the root bg container */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-2xl flex flex-col px-4 pt-24 pb-8 gap-1 overflow-y-auto">
+        <div className="fixed inset-0 z-[8999] bg-gray-50 dark:bg-gray-950 flex flex-col px-4 pt-24 pb-8 gap-1 overflow-y-auto">
           {navItems.map((item) => {
             const active = isActive(item);
             const Icon = item.icon;
             return (
-              <div key={item.label}>
+              <div key={item.label} style={{ position: "relative" }}>
+                {/* Warning badge — mobile, top-right of button */}
+                {item.path === "/early-warning" && warningCount > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "6px",
+                      right: "12px",
+                      zIndex: 10,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: "19px",
+                      height: "19px",
+                      padding: "0 5px",
+                      borderRadius: "999px",
+                      background: "#ef4444",
+                      color: "#ffffff",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      lineHeight: 1,
+                      pointerEvents: "none",
+                      boxShadow: "0 0 0 2px rgba(239,68,68,0.25)",
+                    }}
+                  >
+                    {warningCount}
+                  </span>
+                )}
                 <button
                   onClick={() => handleNav(item)}
                   className={[
                     "flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-base font-medium",
                     "transition-colors duration-150 text-left border-none cursor-pointer",
-                    active
-                      ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-bold"
-                      : "bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
                   ].join(" ")}
+                  style={
+                    active
+                      ? {
+                          background: isDark ? "#f3f4f6" : "#111827",
+                          color: isDark ? "#111827" : "#ffffff",
+                          fontWeight: 700,
+                        }
+                      : {
+                          background: "transparent",
+                          color: isDark ? "#d1d5db" : "#374151",
+                        }
+                  }
                 >
                   <Icon
                     size={18}

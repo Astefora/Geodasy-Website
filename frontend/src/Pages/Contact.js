@@ -9,6 +9,7 @@ import {
   FiEdit2,
   FiCheck,
   FiCheckCircle,
+  FiAlertCircle,
   FiX,
   FiArrowLeft,
   FiLogOut,
@@ -26,21 +27,49 @@ function Toast({ message, type, onClose }) {
   }, [onClose]);
 
   const isSuccess = type === "success";
+  const isWarning = type === "warning";
+  const bgColor = isSuccess ? "#059669" : isWarning ? "#d97706" : "#dc2626";
+  const borderColor = isSuccess ? "#10b981" : isWarning ? "#f59e0b" : "#ef4444";
+  const shadowColor = isSuccess
+    ? "rgba(5, 150, 105, 0.45)"
+    : isWarning
+      ? "rgba(217, 119, 6, 0.45)"
+      : "rgba(220, 38, 38, 0.45)";
+
   return (
     <div
-      style={{ position: "fixed", top: "88px", right: "24px", zIndex: 9500 }}
-      className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold transition-all ${
-        isSuccess
-          ? "bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300"
-          : "bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300"
-      }`}
+      className={`app-toast-container ${isSuccess ? "app-toast-success" : "app-toast-error"} fixed z-[99999] flex items-center gap-3 px-5 py-3.5 rounded-2xl text-white text-sm font-semibold tracking-wide`}
+      style={{
+        position: "fixed",
+        top: "88px",
+        right: "24px",
+        zIndex: 99999,
+        backgroundColor: bgColor,
+        background: bgColor,
+        color: "#ffffff",
+        border: `1.5px solid ${borderColor}`,
+        boxShadow: `0 10px 25px -3px ${shadowColor}, 0 4px 12px -2px rgba(0, 0, 0, 0.3)`,
+        opacity: 1,
+      }}
     >
-      <span
-        className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isSuccess ? "bg-green-500" : "bg-red-500"}`}
-      />
-      {message}
-      <button onClick={onClose} className="ml-2 opacity-60 hover:opacity-100">
-        <FiX size={13} />
+      <div className="flex-shrink-0 text-white flex items-center">
+        {isSuccess ? (
+          <FiCheckCircle size={18} color="#ffffff" />
+        ) : (
+          <FiAlertCircle size={18} color="#ffffff" />
+        )}
+      </div>
+      <span style={{ color: "#ffffff", fontWeight: 600, fontSize: "13.5px" }}>
+        {message}
+      </span>
+      <button
+        type="button"
+        onClick={onClose}
+        style={{ color: "#ffffff" }}
+        className="ml-2.5 p-1 rounded-lg hover:bg-white/20 transition-colors text-white flex-shrink-0 flex items-center justify-center cursor-pointer"
+        title="Close notification"
+      >
+        <FiX size={15} color="#ffffff" />
       </button>
     </div>
   );
@@ -394,9 +423,7 @@ export default function Contact() {
       : "1px solid rgba(0,0,0,0.08)",
   };
 
-  // Avatar size constants
-  const AVA = 155;
-
+  // Avatar size constants (kept for reference, not used in layout)
   return (
     <div className="min-h-screen pb-3 text-gray-900 dark:text-white">
       {toast && (
@@ -418,7 +445,7 @@ export default function Contact() {
       {/* ── Hero header card — buttons live INSIDE it ── */}
       <div
         className="mx-4 sm:mx-8 mt-6 mb-7 rounded-2xl overflow-hidden relative shadow-lg"
-        style={{ ...cardStyle, minHeight: `${AVA + 48}px` }}
+        style={{ ...cardStyle, minHeight: "200px" }}
       >
         {/* Ambient glow — bottom-left soft indigo */}
         <div
@@ -448,15 +475,14 @@ export default function Contact() {
             filter: "blur(30px)",
           }}
         />
-        {/* Top bar inside the card: Dashboard ← on left, Logout on right */}
-        <div className="flex items-center justify-between px-8 pt-5 pb-0">
-          {/* Back button — theme-aware, works in both light and dark */}
+        {/* Top bar inside the card: Back (left) + Logout (right) on one line */}
+        <div className="flex items-center justify-between px-6 sm:px-8 pt-5 pb-0">
           <button
             onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md hover:-translate-y-px"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md hover:-translate-y-px whitespace-nowrap"
           >
             <FiArrowLeft
-              size={15}
+              size={13}
               className="text-gray-700 dark:text-gray-300 flex-shrink-0"
             />
             <span className="text-gray-800 dark:text-gray-200">
@@ -466,47 +492,51 @@ export default function Contact() {
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950 text-red-600 dark:text-red-400 text-sm font-semibold transition-all"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950 text-red-600 dark:text-red-400 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap"
           >
-            <FiLogOut size={14} />
+            <FiLogOut size={13} />
             <span style={{ color: "inherit" }}>Logout</span>
           </button>
         </div>
 
-        {/* Avatar row: absolute avatar + name centred vertically to avatar height */}
-        <div className="flex items-stretch justify-between px-8 pt-4 pb-6">
-          {/* Left: avatar + name/meta centred to avatar */}
-          <div className="flex items-center gap-6">
+        {/* Avatar row — responsive: row on md+, column on mobile */}
+        <div className="flex flex-col md:flex-row md:items-stretch md:justify-between px-6 sm:px-8 pt-4 pb-6 gap-4">
+          {/* Left: avatar + name/meta */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6">
             {/* Avatar */}
             <div
               className="flex-shrink-0 rounded-full flex items-center justify-center font-extrabold text-white select-none"
               style={{
-                width: `${AVA}px`,
-                height: `${AVA}px`,
-                fontSize: "52px",
+                width: "96px",
+                height: "96px",
+                fontSize: "34px",
                 background: "linear-gradient(135deg,#312e81 0%,#4c1d95 100%)",
                 boxShadow: "0 8px 32px rgba(49,46,129,0.35)",
               }}
             >
-              {initials}
+              <span
+                className="dash-avatar-text"
+                style={{ color: "#ffffff", fontWeight: 800, fontSize: "34px" }}
+              >
+                {initials}
+              </span>
             </div>
 
-            {/* Name + meta vertically centred to avatar */}
-            <div
-              className="flex flex-col justify-center"
-              style={{ height: `${AVA}px` }}
-            >
-              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight mb-2">
+            {/* Name + meta */}
+            <div className="flex flex-col justify-center text-center sm:text-left min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight mb-2 break-words">
                 {user.fullName}
               </h1>
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5">
                 <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
                   <FiClock size={13} />
                   <LocalTime />
                 </span>
-                <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-                  <FiMail size={13} />
-                  {user.email}
+                <span className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 min-w-0">
+                  <FiMail size={13} className="flex-shrink-0" />
+                  <span className="truncate max-w-[160px] sm:max-w-none">
+                    {user.email}
+                  </span>
                 </span>
                 <span
                   className={`text-xs font-bold px-2.5 py-0.5 rounded-full capitalize ${statusCls}`}
@@ -517,8 +547,8 @@ export default function Contact() {
             </div>
           </div>
 
-          {/* Right: Edit profile at bottom */}
-          <div className="flex flex-col justify-end pb-0">
+          {/* Edit button — bottom-right on desktop, centered below on mobile */}
+          <div className="flex items-center justify-center md:items-end md:justify-end md:pb-0">
             <button
               onClick={() => setEditOpen(true)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-[0.98]"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../ThemeContext";
 import {
@@ -15,6 +16,10 @@ import {
   FiTrendingUp,
   FiAlertCircle,
   FiMail,
+  FiRefreshCw,
+  FiEdit2,
+  FiTrash2,
+  FiChevronDown,
 } from "react-icons/fi";
 
 // ── Toast ──────────────────────────────────────────────────────────────────
@@ -25,24 +30,49 @@ function Toast({ message, type, onClose }) {
   }, [onClose]);
 
   const isSuccess = type === "success";
+  const isWarning = type === "warning";
+  const bgColor = isSuccess ? "#059669" : isWarning ? "#d97706" : "#dc2626";
+  const borderColor = isSuccess ? "#10b981" : isWarning ? "#f59e0b" : "#ef4444";
+  const shadowColor = isSuccess
+    ? "rgba(5, 150, 105, 0.45)"
+    : isWarning
+      ? "rgba(217, 119, 6, 0.45)"
+      : "rgba(220, 38, 38, 0.45)";
+
   return (
     <div
-      style={{ position: "fixed", top: "88px", right: "24px", zIndex: 9500 }}
-      className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold transition-all ${
-        isSuccess
-          ? "bg-green-50 dark:bg-green-950 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300"
-          : "bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300"
-      }`}
+      className={`app-toast-container ${isSuccess ? "app-toast-success" : "app-toast-error"} fixed z-[99999] flex items-center gap-3 px-5 py-3.5 rounded-2xl text-white text-sm font-semibold tracking-wide`}
+      style={{
+        position: "fixed",
+        top: "88px",
+        right: "24px",
+        zIndex: 99999,
+        backgroundColor: bgColor,
+        background: bgColor,
+        color: "#ffffff",
+        border: `1.5px solid ${borderColor}`,
+        boxShadow: `0 10px 25px -3px ${shadowColor}, 0 4px 12px -2px rgba(0, 0, 0, 0.3)`,
+        opacity: 1,
+      }}
     >
-      <span
-        className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isSuccess ? "bg-green-500" : "bg-red-500"}`}
-      />
-      {message}
+      <div className="flex-shrink-0 text-white flex items-center">
+        {isSuccess ? (
+          <FiCheckCircle size={18} color="#ffffff" />
+        ) : (
+          <FiAlertCircle size={18} color="#ffffff" />
+        )}
+      </div>
+      <span style={{ color: "#ffffff", fontWeight: 600, fontSize: "13.5px" }}>
+        {message}
+      </span>
       <button
+        type="button"
         onClick={onClose}
-        className="ml-2 opacity-60 hover:opacity-100 transition-opacity text-base leading-none"
+        style={{ color: "#ffffff" }}
+        className="ml-2.5 p-1 rounded-lg hover:bg-white/20 transition-colors text-white flex-shrink-0 flex items-center justify-center cursor-pointer"
+        title="Close notification"
       >
-        <FiX size={14} />
+        <FiX size={15} color="#ffffff" />
       </button>
     </div>
   );
@@ -472,7 +502,7 @@ function ValidationModal({ message, onClose }) {
     </div>
   );
 }
-function SubmissionModal({ item, onClose }) {
+function SubmissionModal({ item, onClose, onEdit }) {
   const typeKey = item.hazardType
     ? item.hazardType.charAt(0).toUpperCase() + item.hazardType.slice(1)
     : "";
@@ -578,29 +608,708 @@ function SubmissionModal({ item, onClose }) {
           </a>
         )}
 
-        <button
-          onClick={onClose}
-          className="mt-1 w-full py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-        >
-          Close
-        </button>
+        {/* Edit + Close buttons */}
+        <div className="flex gap-3 mt-1">
+          {(status === "pending" || status === "approved") && onEdit && (
+            <button
+              onClick={() => onEdit(item)}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                status === "approved"
+                  ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                  : "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+              }`}
+            >
+              <FiEdit2 size={13} />
+              {status === "approved" ? "Request Edit" : "Edit"}
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── My Research Submissions Section ───────────────────────────────────────
-function ResearchSubmissions({ history }) {
+// ── Delete Confirmation Modal ─────────────────────────────────────────────
+function DeleteConfirmModal({ title, onConfirm, onCancel }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const [selected, setSelected] = useState(null);
+  const bg = isDark ? "#111827" : "#ffffff";
+  const border = isDark ? "1px solid #374151" : "1px solid #e5e7eb";
+  const textPrimary = isDark ? "#f9fafb" : "#111827";
+  const textMuted = isDark ? "#9ca3af" : "#6b7280";
 
-  if (!history || history.length === 0) return null;
+  return ReactDOM.createPortal(
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 99999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+        background: "rgba(0,0,0,0.55)",
+        backdropFilter: "blur(6px)",
+      }}
+      onClick={onCancel}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxWidth: "400px",
+          background: bg,
+          border,
+          borderRadius: "18px",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.30)",
+          padding: "28px 24px 22px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "14px",
+        }}
+      >
+        {/* Icon */}
+        <div
+          style={{
+            width: "52px",
+            height: "52px",
+            borderRadius: "14px",
+            background: "rgba(239,68,68,0.10)",
+            border: "1px solid rgba(239,68,68,0.22)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <FiTrash2 size={22} style={{ color: "#ef4444" }} />
+        </div>
+
+        {/* Text */}
+        <div style={{ textAlign: "center" }}>
+          <p
+            style={{
+              margin: "0 0 6px",
+              fontSize: "16px",
+              fontWeight: 800,
+              color: textPrimary,
+            }}
+          >
+            Delete Upload
+          </p>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "13px",
+              color: textMuted,
+              lineHeight: 1.55,
+            }}
+          >
+            <strong style={{ color: textPrimary }}>
+              {title || "This item"}
+            </strong>{" "}
+            will be permanently deleted. This cannot be undone.
+          </p>
+        </div>
+
+        {/* Buttons */}
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            width: "100%",
+            marginTop: "4px",
+          }}
+        >
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1,
+              padding: "10px",
+              borderRadius: "11px",
+              border: isDark ? "1px solid #374151" : "1px solid #e5e7eb",
+              background: isDark ? "#1f2937" : "#f9fafb",
+              color: textMuted,
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1,
+              padding: "10px",
+              borderRadius: "11px",
+              border: "none",
+              background: "linear-gradient(135deg,#dc2626,#ef4444)",
+              color: "#ffffff",
+              fontSize: "13px",
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 4px 14px rgba(220,38,38,0.35)",
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// ── Delete upload helper ──────────────────────────────────────────────────
+async function deleteUpload(id, onDeleted) {
+  try {
+    const res = await fetch(`http://localhost:5002/api/uploads/${id}`, {
+      method: "DELETE",
+    });
+    if (res.ok) onDeleted();
+    else onDeleted(new Error("Delete failed."));
+  } catch {
+    onDeleted(new Error("Network error."));
+  }
+}
+
+// ── Edit Upload Modal ─────────────────────────────────────────────────────
+function EditUploadModal({ item, onClose, onSaved }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const [title, setTitle] = useState(item.title || "");
+  const [description, setDescription] = useState(item.description || "");
+  const [region, setRegion] = useState(item.region || "Ethiopia");
+  const [hazardType, setHazardType] = useState(item.hazardType || "");
+  const [content, setContent] = useState(item.content || "");
+  const [uploadType] = useState(item.uploadType || "file");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const wasApproved = item.status === "approved";
+
+  React.useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      setError("Title is required.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `http://localhost:5002/api/uploads/${item._id || item.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: title.trim(),
+            description: description.trim(),
+            region,
+            hazardType: hazardType.trim(),
+            content,
+          }),
+        },
+      );
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error || "Save failed.");
+        return;
+      }
+      onSaved(data.message);
+    } catch {
+      setError("Network error.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Pure inline styles — immune to theme.css overrides
+  const bg = isDark ? "#111827" : "#ffffff";
+  const border = isDark ? "1px solid #374151" : "1px solid #e5e7eb";
+  const textPrimary = isDark ? "#f9fafb" : "#111827";
+  const textMuted = isDark ? "#9ca3af" : "#6b7280";
+  const inputBg = isDark ? "#1f2937" : "#ffffff";
+  const inputBorder = isDark ? "1px solid #374151" : "1px solid #d1d5db";
+  const inputStyle = {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "10px 14px",
+    borderRadius: "12px",
+    border: inputBorder,
+    background: inputBg,
+    color: textPrimary,
+    fontSize: "14px",
+    outline: "none",
+    fontFamily: "'Segoe UI', Arial, sans-serif",
+  };
+  const labelStyle = {
+    display: "block",
+    marginBottom: "6px",
+    fontSize: "11px",
+    fontWeight: 700,
+    letterSpacing: "0.07em",
+    textTransform: "uppercase",
+    color: textMuted,
+  };
+  const sectionBorder = isDark ? "1px solid #374151" : "1px solid #e5e7eb";
+
+  const modal = (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 99999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+        background: "rgba(0,0,0,0.65)",
+        backdropFilter: "blur(6px)",
+        overflowY: "auto",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: "720px",
+          maxHeight: "90vh",
+          display: "flex",
+          flexDirection: "column",
+          background: bg,
+          borderRadius: "18px",
+          border,
+          boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
+          overflow: "hidden",
+          margin: "auto",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "18px 24px",
+            borderBottom: sectionBorder,
+            flexShrink: 0,
+            background: bg,
+          }}
+        >
+          <div>
+            <div
+              style={{ fontSize: "18px", fontWeight: 800, color: textPrimary }}
+            >
+              Edit Upload
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: textMuted,
+                marginTop: "2px",
+                textTransform: "capitalize",
+              }}
+            >
+              {uploadType} · {item.fileName || "—"}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: textMuted,
+              padding: "4px",
+              display: "flex",
+            }}
+          >
+            <FiX size={20} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "20px 24px",
+            background: bg,
+          }}
+        >
+          {wasApproved && (
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                background: isDark ? "rgba(245,158,11,0.1)" : "#fffbeb",
+                border: "1px solid rgba(245,158,11,0.35)",
+                marginBottom: "16px",
+              }}
+            >
+              <FiBell
+                size={14}
+                style={{ color: "#f59e0b", flexShrink: 0, marginTop: "2px" }}
+              />
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "12px",
+                  color: isDark ? "#fcd34d" : "#92400e",
+                  lineHeight: 1.6,
+                }}
+              >
+                Saving changes will reset this upload to{" "}
+                <strong>Pending</strong> status — an administrator must
+                re-approve before it goes live.
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div
+              style={{
+                padding: "10px 14px",
+                borderRadius: "10px",
+                background: isDark ? "rgba(239,68,68,0.1)" : "#fef2f2",
+                border: "1px solid rgba(239,68,68,0.3)",
+                color: "#ef4444",
+                fontSize: "12px",
+                fontWeight: 600,
+                marginBottom: "16px",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "16px",
+            }}
+          >
+            {/* Title */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={labelStyle}>Title *</label>
+              <input
+                style={inputStyle}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter title"
+              />
+            </div>
+
+            {/* Hazard Type */}
+            <div>
+              <label style={labelStyle}>Hazard Type</label>
+              <select
+                style={inputStyle}
+                value={hazardType}
+                onChange={(e) => setHazardType(e.target.value)}
+              >
+                <option value="">Select type</option>
+                <option value="earthquake">Earthquake</option>
+                <option value="flood">Flood</option>
+                <option value="fire">Fire</option>
+                <option value="drought">Drought</option>
+                <option value="landslide">Landslide</option>
+                <option value="volcano">Volcano</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            {/* Region */}
+            <div>
+              <label style={labelStyle}>Region</label>
+              <select
+                style={inputStyle}
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+              >
+                <option value="Ethiopia">Ethiopia (National)</option>
+                <option value="Oromia">Oromia</option>
+                <option value="Amhara">Amhara</option>
+                <option value="Tigray">Tigray</option>
+                <option value="SNNPR">SNNPR</option>
+                <option value="Afar">Afar</option>
+                <option value="Somali">Somali</option>
+                <option value="Benishangul">Benishangul-Gumuz</option>
+                <option value="Gambella">Gambella</option>
+                <option value="Harari">Harari</option>
+                <option value="Dire Dawa">Dire Dawa</option>
+                <option value="Addis Ababa">Addis Ababa</option>
+              </select>
+            </div>
+
+            {/* Description */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={labelStyle}>Description</label>
+              <textarea
+                style={{ ...inputStyle, resize: "vertical", minHeight: "88px" }}
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe your upload..."
+              />
+            </div>
+
+            {/* Content for link/text */}
+            {(uploadType === "link" || uploadType === "text") && (
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={labelStyle}>
+                  {uploadType === "link" ? "Link URL" : "Text Content"}
+                </label>
+                {uploadType === "link" ? (
+                  <input
+                    type="url"
+                    style={inputStyle}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="https://..."
+                  />
+                ) : (
+                  <textarea
+                    style={{
+                      ...inputStyle,
+                      resize: "vertical",
+                      minHeight: "120px",
+                    }}
+                    rows={5}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Enter your research text..."
+                  />
+                )}
+              </div>
+            )}
+
+            {/* File notice */}
+            {uploadType === "file" && item.fileName && (
+              <div
+                style={{
+                  gridColumn: "1 / -1",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "10px",
+                  padding: "12px 14px",
+                  borderRadius: "10px",
+                  background: isDark ? "rgba(255,255,255,0.04)" : "#f9fafb",
+                  border: inputBorder,
+                  fontSize: "12px",
+                  color: textMuted,
+                }}
+              >
+                <FiFileText
+                  size={14}
+                  style={{ flexShrink: 0, marginTop: "1px" }}
+                />
+                <span>
+                  Attached:{" "}
+                  <strong style={{ color: textPrimary }}>
+                    {item.fileName}
+                  </strong>{" "}
+                  — to replace the file, delete this upload and create a new
+                  one.
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            padding: "16px 24px",
+            borderTop: sectionBorder,
+            flexShrink: 0,
+            background: bg,
+          }}
+        >
+          <button
+            onClick={onClose}
+            disabled={loading}
+            style={{
+              flex: 1,
+              padding: "11px",
+              borderRadius: "12px",
+              border: inputBorder,
+              background: "transparent",
+              color: textMuted,
+              fontSize: "14px",
+              fontWeight: 600,
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.5 : 1,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading || !title.trim()}
+            style={{
+              flex: 1,
+              padding: "11px",
+              borderRadius: "12px",
+              border: "none",
+              background: wasApproved ? "#f59e0b" : "#3b82f6",
+              color: "#fff",
+              fontSize: "14px",
+              fontWeight: 800,
+              cursor: loading || !title.trim() ? "not-allowed" : "pointer",
+              opacity: loading || !title.trim() ? 0.5 : 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+            }}
+          >
+            {loading ? (
+              <FiRefreshCw
+                size={14}
+                style={{ animation: "spin 0.7s linear infinite" }}
+              />
+            ) : (
+              <FiCheckCircle size={14} />
+            )}
+            {wasApproved ? "Submit for Re-approval" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return ReactDOM.createPortal(modal, document.body);
+}
+
+// ── My Research Submissions Section ───────────────────────────────────────
+function ResearchSubmissions({ history: initialHistory, onRefresh }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const [localHistory, setLocalHistory] = useState(initialHistory || []);
+  const [selected, setSelected] = useState(null);
+  const [editItem, setEditItem] = useState(null);
+  const [toast, setToastMsg] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null); // { id, title }
+
+  React.useEffect(() => {
+    setLocalHistory(initialHistory || []);
+  }, [initialHistory]);
+
+  if (!localHistory.length) return null;
+
+  const showToast = (msg, type = "success") => {
+    setToastMsg({ msg, type });
+    setTimeout(() => setToastMsg(null), 4000);
+  };
+
+  const handleSaved = (msg) => {
+    setEditItem(null);
+    setSelected(null);
+    showToast(msg, "success");
+    if (onRefresh) onRefresh();
+  };
+
+  const handleDelete = (id, title) => {
+    setDeleteTarget({ id, title });
+  };
+
+  const confirmDelete = () => {
+    const { id } = deleteTarget;
+    setDeleteTarget(null);
+    deleteUpload(id, (err) => {
+      if (err) {
+        showToast(err.message, "error");
+        return;
+      }
+      setLocalHistory((prev) => prev.filter((r) => (r._id || r.id) !== id));
+      showToast("Upload deleted successfully.", "success");
+      if (onRefresh) onRefresh();
+    });
+  };
+
+  const ToastBar = () =>
+    !toast ? null : (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          marginBottom: "12px",
+          padding: "10px 16px",
+          borderRadius: "12px",
+          background:
+            toast.type === "success"
+              ? isDark
+                ? "rgba(16,185,129,0.15)"
+                : "#dcfce7"
+              : isDark
+                ? "rgba(239,68,68,0.15)"
+                : "#fee2e2",
+          border: `1px solid ${toast.type === "success" ? (isDark ? "#34d39966" : "#86efac") : isDark ? "#f8717166" : "#fca5a5"}`,
+          color:
+            toast.type === "success"
+              ? isDark
+                ? "#34d399"
+                : "#15803d"
+              : isDark
+                ? "#f87171"
+                : "#dc2626",
+          fontSize: "13px",
+          fontWeight: 600,
+        }}
+      >
+        <FiCheckCircle size={15} /> {toast.msg}
+      </div>
+    );
 
   return (
     <>
-      {selected && (
-        <SubmissionModal item={selected} onClose={() => setSelected(null)} />
+      {deleteTarget && (
+        <DeleteConfirmModal
+          title={deleteTarget.title}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+      {editItem && (
+        <EditUploadModal
+          item={editItem}
+          onClose={() => setEditItem(null)}
+          onSaved={handleSaved}
+        />
+      )}
+      {selected && !editItem && (
+        <SubmissionModal
+          item={selected}
+          onClose={() => setSelected(null)}
+          onEdit={(item) => {
+            setSelected(null);
+            setEditItem(item);
+          }}
+        />
       )}
       <div
         className="mt-8 relative overflow-hidden rounded-2xl shadow-xl"
@@ -657,14 +1366,15 @@ function ResearchSubmissions({ history }) {
                 My Research Submissions
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {history.length} submission{history.length !== 1 ? "s" : ""}
+                {localHistory.length} submission
+                {localHistory.length !== 1 ? "s" : ""}
               </p>
             </div>
           </div>
 
           {/* Cards grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {history.map((r) => {
+            {localHistory.map((r) => {
               const typeKey = r.hazardType
                 ? r.hazardType.charAt(0).toUpperCase() + r.hazardType.slice(1)
                 : "";
@@ -749,6 +1459,73 @@ function ResearchSubmissions({ history }) {
                         {new Date(r.date).toLocaleDateString()}
                       </p>
                     )}
+                    {/* View + Edit row — bottom right */}
+                    <div className="flex items-center justify-end gap-3 mt-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelected(r);
+                        }}
+                        style={{
+                          color: "#6366f1",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "3px",
+                        }}
+                      >
+                        <FiFileText size={10} /> View
+                      </button>
+                      {(status === "pending" || status === "approved") && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditItem(r);
+                          }}
+                          style={{
+                            color:
+                              status === "approved" ? "#f59e0b" : "#3b82f6",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "3px",
+                          }}
+                        >
+                          <FiEdit2 size={10} />
+                          {status === "approved" ? "Request Edit" : "Edit"}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(r._id || r.id, r.title);
+                        }}
+                        style={{
+                          color: "#ef4444",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "3px",
+                        }}
+                      >
+                        <FiTrash2 size={10} /> Delete
+                      </button>
+                    </div>
                   </div>
                 </button>
               );
@@ -760,6 +1537,92 @@ function ResearchSubmissions({ history }) {
   );
 }
 
+// ── File Preview — compact bar with clickable name ────────────────────────
+function FilePreview({ file, onRemove, accentColor = "#3b82f6" }) {
+  const [objectUrl, setObjectUrl] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!file) {
+      setObjectUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setObjectUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  if (!file) return null;
+
+  const fmt = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const ext = file.name.split(".").pop().toUpperCase();
+  const extColors = {
+    PDF: "#ef4444",
+    PNG: "#8b5cf6",
+    JPG: "#8b5cf6",
+    JPEG: "#8b5cf6",
+    WEBP: "#8b5cf6",
+    GIF: "#8b5cf6",
+    CSV: "#3b82f6",
+    JSON: "#10b981",
+    XLSX: "#22c55e",
+    XLS: "#22c55e",
+    DOCX: "#2563eb",
+    DOC: "#2563eb",
+    TXT: "#6b7280",
+    GEOJSON: "#10b981",
+  };
+  const extColor = extColors[ext] || accentColor;
+
+  return (
+    <div
+      className="mt-3 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl"
+      style={{
+        background: `${accentColor}08`,
+        border: `1px solid ${accentColor}28`,
+      }}
+    >
+      {/* Left: badge + clickable name + size */}
+      <div className="flex items-center gap-2 min-w-0">
+        <span
+          className="text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex-shrink-0"
+          style={{ background: extColor }}
+        >
+          {ext}
+        </span>
+        <a
+          href={objectUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs font-semibold truncate hover:underline"
+          style={{ color: accentColor, maxWidth: "200px" }}
+          title={`Open ${file.name} in new tab`}
+        >
+          {file.name}
+        </a>
+        <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+          {fmt(file.size)}
+        </span>
+      </div>
+
+      {/* Right: remove */}
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="flex-shrink-0 text-red-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          title="Remove file"
+        >
+          <FiX size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
 // ── Research Upload Panel ─────────────────────────────────────────────────
 function ResearchPanel({ currentUser, onGoBack }) {
   const { theme } = useTheme();
@@ -770,6 +1633,7 @@ function ResearchPanel({ currentUser, onGoBack }) {
     topic: "Earthquake",
     typeText: "",
     description: "",
+    region: "Ethiopia",
     uploadType: "file",
     link: "",
     text: "",
@@ -802,7 +1666,7 @@ function ResearchPanel({ currentUser, onGoBack }) {
         ? 2
         : 1;
 
-  useEffect(() => {
+  const loadResearchHistory = React.useCallback(() => {
     fetch("/api/uploads")
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => {
@@ -820,6 +1684,10 @@ function ResearchPanel({ currentUser, onGoBack }) {
       })
       .catch(() => {});
   }, [currentUser]);
+
+  useEffect(() => {
+    loadResearchHistory();
+  }, [loadResearchHistory]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -861,6 +1729,7 @@ function ResearchPanel({ currentUser, onGoBack }) {
         formData.append("title", form.title.trim());
         formData.append("hazardType", resolvedHazardType);
         formData.append("description", form.description.trim());
+        formData.append("region", form.region || "Ethiopia");
         formData.append(
           "uploadedBy",
           currentUser?.fullName || currentUser?.username || "LEO member",
@@ -885,6 +1754,7 @@ function ResearchPanel({ currentUser, onGoBack }) {
         formData.append("title", form.title.trim());
         formData.append("hazardType", resolvedHazardType);
         formData.append("description", form.description.trim());
+        formData.append("region", form.region || "Ethiopia");
         formData.append(
           "uploadedBy",
           currentUser?.fullName || currentUser?.username || "LEO member",
@@ -985,9 +1855,9 @@ function ResearchPanel({ currentUser, onGoBack }) {
             </div>
 
             {/* Right: steps + gap + back button, top-aligned */}
-            <div className="flex items-start gap-6 flex-shrink-0">
-              {/* Step dots */}
-              <div className="flex items-center gap-1">
+            <div className="flex items-start gap-4 flex-shrink-0 ml-auto">
+              {/* Step dots — hidden on very small screens */}
+              <div className="hidden sm:flex items-center gap-1">
                 {["Info", "Type", "File", "Ready"].map((label, i) => (
                   <React.Fragment key={label}>
                     <StepDot
@@ -1003,6 +1873,12 @@ function ResearchPanel({ currentUser, onGoBack }) {
                     )}
                   </React.Fragment>
                 ))}
+              </div>
+              {/* Step counter on mobile only */}
+              <div className="flex sm:hidden items-center gap-1.5 mt-0.5">
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                  Step {step}/4
+                </span>
               </div>
               {/* Back button — top-aligned with circle row */}
               {onGoBack && (
@@ -1132,6 +2008,29 @@ function ResearchPanel({ currentUser, onGoBack }) {
             />
           </div>
 
+          {/* Region */}
+          <div>
+            <label className={labelClass}>Geographic Region</label>
+            <select
+              className={inputClass}
+              value={form.region}
+              onChange={(e) => set("region", e.target.value)}
+            >
+              <option value="Ethiopia">Ethiopia (National)</option>
+              <option value="Oromia">Oromia</option>
+              <option value="Amhara">Amhara</option>
+              <option value="Tigray">Tigray</option>
+              <option value="SNNPR">SNNPR</option>
+              <option value="Afar">Afar</option>
+              <option value="Somali">Somali</option>
+              <option value="Benishangul">Benishangul-Gumuz</option>
+              <option value="Gambella">Gambella</option>
+              <option value="Harari">Harari</option>
+              <option value="Dire Dawa">Dire Dawa</option>
+              <option value="Addis Ababa">Addis Ababa</option>
+            </select>
+          </div>
+
           {/* Upload type toggle */}
           <div>
             <label className={labelClass}>Upload Method *</label>
@@ -1200,6 +2099,14 @@ function ResearchPanel({ currentUser, onGoBack }) {
                 accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg"
                 onChange={(e) => setFile(e.target.files[0])}
               />
+              <FilePreview
+                file={file}
+                accentColor="#3b82f6"
+                onRemove={() => {
+                  setFile(null);
+                  if (fileRef.current) fileRef.current.value = "";
+                }}
+              />
             </div>
           )}
 
@@ -1235,7 +2142,7 @@ function ResearchPanel({ currentUser, onGoBack }) {
           />
         </form>
       </div>
-      <ResearchSubmissions history={history} />
+      <ResearchSubmissions history={history} onRefresh={loadResearchHistory} />
     </>
   );
 }
@@ -1328,7 +2235,7 @@ function DisasterPanel({ currentUser, onOpenResearch }) {
   const [stats, setStats] = useState({ total: 0, approved: 0, pending: 0 });
   const fileRef = useRef();
 
-  useEffect(() => {
+  const loadDisasterHistory = React.useCallback(() => {
     fetch("/api/uploads")
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => {
@@ -1346,6 +2253,10 @@ function DisasterPanel({ currentUser, onOpenResearch }) {
       })
       .catch(() => {});
   }, [currentUser]);
+
+  useEffect(() => {
+    loadDisasterHistory();
+  }, [loadDisasterHistory]);
 
   const validate = () => {
     if (!disasterType) return "Please select a disaster type.";
@@ -1463,12 +2374,12 @@ function DisasterPanel({ currentUser, onOpenResearch }) {
 
         {/* Panel header */}
         <div className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200 dark:shadow-indigo-900/40">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200 dark:shadow-indigo-900/40 flex-shrink-0">
                 <FiGlobe size={20} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
                   Submit Local Data
                 </h2>
@@ -1479,15 +2390,15 @@ function DisasterPanel({ currentUser, onOpenResearch }) {
             </div>
 
             {/* Research upload pill button */}
-            <SwitchPillBtn
-              onClick={onOpenResearch}
-              label="Upload Research"
-              icon={FiBookOpen}
-              isDark={isDark}
-            />
+            <div className="flex-shrink-0 ml-auto">
+              <SwitchPillBtn
+                onClick={onOpenResearch}
+                label="Upload Research"
+                icon={FiBookOpen}
+                isDark={isDark}
+              />
+            </div>
           </div>
-
-          {/* Stats row removed */}
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
@@ -1606,16 +2517,14 @@ function DisasterPanel({ currentUser, onOpenResearch }) {
                 }}
               />
               {file && !uploadLink.trim() && (
-                <button
-                  type="button"
-                  onClick={() => {
+                <FilePreview
+                  file={file}
+                  accentColor={accentColor}
+                  onRemove={() => {
                     setFile(null);
                     if (fileRef.current) fileRef.current.value = "";
                   }}
-                  className="mt-1.5 text-xs text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors flex items-center gap-1"
-                >
-                  <FiX size={11} /> Remove file
-                </button>
+                />
               )}
             </div>
 
@@ -1678,23 +2587,121 @@ function DisasterPanel({ currentUser, onOpenResearch }) {
           />
         </form>
       </div>
-      <DisasterSubmissions history={history} />
+      <DisasterSubmissions history={history} onRefresh={loadDisasterHistory} />
     </>
   );
 }
 
 // ── My Local Data Submissions Section ─────────────────────────────────────
-function DisasterSubmissions({ history }) {
+function DisasterSubmissions({ history: initialHistory, onRefresh }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const [localHistory, setLocalHistory] = useState(initialHistory || []);
   const [selected, setSelected] = useState(null);
+  const [editLocal, setEditLocal] = useState(null);
+  const [toast, setToastMsg] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
-  if (!history || history.length === 0) return null;
+  React.useEffect(() => {
+    setLocalHistory(initialHistory || []);
+  }, [initialHistory]);
+
+  if (!localHistory.length) return null;
+
+  const showToast = (msg, type = "success") => {
+    setToastMsg({ msg, type });
+    setTimeout(() => setToastMsg(null), 4000);
+  };
+
+  const handleSaved = (msg) => {
+    setEditLocal(null);
+    setSelected(null);
+    showToast(msg, "success");
+    if (onRefresh) onRefresh();
+  };
+
+  const handleDelete = (id) => {
+    setDeleteTarget({
+      id,
+      title: localHistory.find((r) => (r._id || r.id) === id)?.title,
+    });
+  };
+
+  const confirmDelete = () => {
+    const { id } = deleteTarget;
+    setDeleteTarget(null);
+    deleteUpload(id, (err) => {
+      if (err) {
+        showToast(err.message, "error");
+        return;
+      }
+      setLocalHistory((prev) => prev.filter((r) => (r._id || r.id) !== id));
+      showToast("Upload deleted successfully.", "success");
+      if (onRefresh) onRefresh();
+    });
+  };
+
+  const ToastBar = () =>
+    !toast ? null : (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          marginBottom: "12px",
+          padding: "10px 16px",
+          borderRadius: "12px",
+          background:
+            toast.type === "success"
+              ? isDark
+                ? "rgba(16,185,129,0.15)"
+                : "#dcfce7"
+              : isDark
+                ? "rgba(239,68,68,0.15)"
+                : "#fee2e2",
+          border: `1px solid ${toast.type === "success" ? (isDark ? "#34d39966" : "#86efac") : isDark ? "#f8717166" : "#fca5a5"}`,
+          color:
+            toast.type === "success"
+              ? isDark
+                ? "#34d399"
+                : "#15803d"
+              : isDark
+                ? "#f87171"
+                : "#dc2626",
+          fontSize: "13px",
+          fontWeight: 600,
+        }}
+      >
+        <FiCheckCircle size={15} /> {toast.msg}
+      </div>
+    );
 
   return (
     <>
-      {selected && (
-        <SubmissionModal item={selected} onClose={() => setSelected(null)} />
+      <ToastBar />
+      {deleteTarget && (
+        <DeleteConfirmModal
+          title={deleteTarget.title}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+      {editLocal && (
+        <EditUploadModal
+          item={editLocal}
+          onClose={() => setEditLocal(null)}
+          onSaved={handleSaved}
+        />
+      )}
+      {selected && !editLocal && (
+        <SubmissionModal
+          item={selected}
+          onClose={() => setSelected(null)}
+          onEdit={(item) => {
+            setSelected(null);
+            setEditLocal(item);
+          }}
+        />
       )}
       <div
         className="mt-8 relative overflow-hidden rounded-2xl shadow-xl"
@@ -1750,12 +2757,13 @@ function DisasterSubmissions({ history }) {
                 My Local Data Submissions
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {history.length} submission{history.length !== 1 ? "s" : ""}
+                {localHistory.length} submission
+                {localHistory.length !== 1 ? "s" : ""}
               </p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {history.map((r) => {
+            {localHistory.map((r) => {
               const dType =
                 r.disasterType ||
                 (r.hazardType
@@ -1842,6 +2850,78 @@ function DisasterSubmissions({ history }) {
                         {new Date(r.date).toLocaleDateString()}
                       </p>
                     )}
+                    {/* View + Edit row — bottom right */}
+                    <div className="flex items-center justify-end gap-3 mt-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelected({
+                            ...r,
+                            title: r.title || dType,
+                            hazardType:
+                              r.hazardType || r.disasterType?.toLowerCase(),
+                          });
+                        }}
+                        style={{
+                          color: "#8b5cf6",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "3px",
+                        }}
+                      >
+                        <FiFileText size={10} /> View
+                      </button>
+                      {(status === "pending" || status === "approved") && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditLocal(r);
+                          }}
+                          style={{
+                            color:
+                              status === "approved" ? "#f59e0b" : "#3b82f6",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "3px",
+                          }}
+                        >
+                          <FiEdit2 size={10} />
+                          {status === "approved" ? "Request Edit" : "Edit"}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(r._id || r.id, r.title);
+                        }}
+                        style={{
+                          color: "#ef4444",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "3px",
+                        }}
+                      >
+                        <FiTrash2 size={10} /> Delete
+                      </button>
+                    </div>
                   </div>
                 </button>
               );
@@ -1858,6 +2938,13 @@ function Dashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [notification, setNotification] = useState(null);
   const [showResearch, setShowResearch] = useState(false);
+  const [dashStats, setDashStats] = useState({
+    total: 0,
+    research: 0,
+    local: 0,
+    approved: 0,
+    rejected: 0,
+  });
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -1870,6 +2957,26 @@ function Dashboard() {
     }
     const user = JSON.parse(userStr);
     setCurrentUser(user);
+
+    // Fetch submission statistics for this user
+    fetch("/api/uploads")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        const name = user.fullName || user.username || "";
+        const mine = data.filter((u) => u.uploadedBy === name);
+        const research = mine.filter(
+          (u) => !u.title?.startsWith("Disaster Data:"),
+        );
+        const local = mine.filter((u) => u.title?.startsWith("Disaster Data:"));
+        setDashStats({
+          total: mine.length,
+          research: research.length,
+          local: local.length,
+          approved: mine.filter((u) => u.status === "approved").length,
+          rejected: mine.filter((u) => u.status === "rejected").length,
+        });
+      })
+      .catch(() => {});
 
     const notifications = JSON.parse(
       localStorage.getItem("notifications") || "[]",
@@ -1902,7 +3009,7 @@ function Dashboard() {
     <div className="min-h-screen pb-6 text-gray-900 dark:text-white">
       {/* ── Header card — ambient glow style ── */}
       <div className="px-4 sm:px-6 lg:px-8 pt-6 mb-7">
-        <div className="relative rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm px-6 py-5 flex flex-wrap items-center justify-between gap-4 overflow-hidden bg-gray-50 dark:bg-gray-900">
+        <div className="relative rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm px-6 py-5 flex items-start justify-between gap-4 overflow-hidden bg-gray-50 dark:bg-gray-900">
           {/* Ambient glow — bottom-left soft indigo */}
           <div
             className="absolute pointer-events-none"
@@ -1955,7 +3062,7 @@ function Dashboard() {
           </div>
 
           {/* Right: action buttons */}
-          <div className="relative flex items-center gap-2">
+          <div className="relative flex items-center gap-2 flex-shrink-0 self-start">
             {notification && (
               <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400">
                 <FiBell size={14} />
@@ -1964,18 +3071,77 @@ function Dashboard() {
             )}
             <button
               onClick={() => navigate("/contact")}
-              title="My Profile"
-              className="w-11 h-11 flex items-center justify-center rounded-full text-white font-extrabold text-sm shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 select-none flex-shrink-0"
+              title="Go to My Profile"
+              className="flex flex-col items-center gap-0.5 group active:scale-95 transition-transform duration-150 select-none flex-shrink-0"
               style={{
-                background: "linear-gradient(135deg, #312e81 0%, #4c1d95 100%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
               }}
             >
-              {currentUser.fullName
-                ?.split(" ")
-                .map((w) => w[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2) || <FiUser size={16} />}
+              {/* Avatar circle with ring */}
+              <div
+                className="relative flex items-center justify-center"
+                style={{ width: "42px", height: "42px" }}
+              >
+                {/* Outer ring — glows on hover */}
+                <div
+                  className="absolute inset-0 rounded-full transition-all duration-200"
+                  style={{
+                    background: "linear-gradient(135deg, #818cf8, #a78bfa)",
+                    padding: "2px",
+                    borderRadius: "9999px",
+                    boxShadow: "0 0 0 0px rgba(129,140,248,0.5)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "9999px",
+                      background:
+                        "linear-gradient(135deg, #312e81 0%, #4c1d95 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <span
+                      className="dash-avatar-text"
+                      style={{
+                        color: "#ffffff",
+                        fontWeight: 800,
+                        fontSize: "13px",
+                        letterSpacing: "0.03em",
+                        lineHeight: 1,
+                        display: "block",
+                      }}
+                    >
+                      {currentUser.fullName
+                        ?.split(" ")
+                        .map((w) => w[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2) || "?"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {/* Label + chevron */}
+              <div className="flex items-center gap-0.5">
+                <span
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 600,
+                    color: "#6366f1",
+                    lineHeight: 1,
+                  }}
+                >
+                  Profile
+                </span>
+                <FiChevronDown size={9} style={{ color: "#6366f1" }} />
+              </div>
             </button>
           </div>
         </div>
@@ -2001,6 +3167,77 @@ function Dashboard() {
 
       {/* ── Full-width panel — switches between Local Data and Research ── */}
       <div className="px-4 sm:px-6 lg:px-8">
+        {/* stats row */}
+        {/* ── Submission Statistics ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+          {[
+            {
+              label: "Total Uploads",
+              value: dashStats.total,
+              icon: FiUploadCloud,
+              color: "#6366f1",
+              bg: "rgba(99,102,241,0.10)",
+              border: "rgba(99,102,241,0.22)",
+            },
+            {
+              label: "Research",
+              value: dashStats.research,
+              icon: FiBookOpen,
+              color: "#0891b2",
+              bg: "rgba(8,145,178,0.10)",
+              border: "rgba(8,145,178,0.22)",
+            },
+            {
+              label: "Local Data",
+              value: dashStats.local,
+              icon: FiGlobe,
+              color: "#7c3aed",
+              bg: "rgba(124,58,237,0.10)",
+              border: "rgba(124,58,237,0.22)",
+            },
+            {
+              label: "Approved",
+              value: dashStats.approved,
+              icon: FiCheckCircle,
+              color: "#10b981",
+              bg: "rgba(16,185,129,0.10)",
+              border: "rgba(16,185,129,0.22)",
+            },
+            {
+              label: "Rejected",
+              value: dashStats.rejected,
+              icon: FiAlertCircle,
+              color: "#ef4444",
+              bg: "rgba(239,68,68,0.10)",
+              border: "rgba(239,68,68,0.22)",
+            },
+          ].map(({ label, value, icon: Icon, color, bg, border }) => (
+            <div
+              key={label}
+              className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all duration-200 hover:shadow-md"
+              style={{ background: bg, border: `1px solid ${border}` }}
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: color + "22" }}
+              >
+                <Icon size={17} style={{ color }} />
+              </div>
+              <div className="min-w-0">
+                <p
+                  className="text-2xl font-extrabold leading-none"
+                  style={{ color }}
+                >
+                  {value}
+                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                  {label}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {showResearch ? (
           <ResearchPanel
             currentUser={currentUser}

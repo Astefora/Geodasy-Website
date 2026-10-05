@@ -98,8 +98,13 @@ body[data-theme="light"] .nav-glass.nav-scrolled:not(.nav-over-hero) {
 /* ── Tablet (≤900px) ──────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .header-title {
-    font-size: 14px !important;
-    max-width: 180px;
+    font-size: 13px !important;
+  }
+  /* Tighten nav item font + padding so 6 items fit comfortably */
+  .header-desktop-nav button {
+    font-size: 11px !important;
+    padding-left: 7px !important;
+    padding-right: 7px !important;
   }
 }
 
@@ -112,16 +117,28 @@ body[data-theme="light"] .nav-glass.nav-scrolled:not(.nav-over-hero) {
     display: flex !important;
   }
   .header-title {
-    display: none !important;
+    font-size: 12px !important;
+    letter-spacing: -0.01em;
   }
   .geoportal-hide-mobile {
     display: none !important;
   }
 }
 
-/* ── Very small (≤480px) ──────────────────────────────────────────────── */
-@media (max-width: 480px) {
-  .geoportal-btn {
-    padding: 7px 10px !important;
+/* ── Very small (≤360px) ──────────────────────────────────────────────── */
+@media (max-width: 360px) {
+  .header-title {
+    font-size: 11px !important;
+  }
+}
+
+/* ── Warning badge on Early Warning nav button ────────────────────────── */
+@keyframes navBadgePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
   }
 }

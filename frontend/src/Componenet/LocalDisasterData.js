@@ -26,7 +26,11 @@ function LocalDisasterData({ disasterType, onUploadReady }) {
         if (!res.ok) throw new Error("Backend unavailable");
         const data = await res.json();
         if (cancelled) return;
-        const slice = data.slice(0, 1);
+        // Only show local disaster data uploads (not research uploads)
+        const localOnly = data.filter((u) =>
+          u.title?.startsWith("Disaster Data:"),
+        );
+        const slice = localOnly.slice(0, 1);
         setUploads(slice);
         if (onUploadReady) onUploadReady(slice[0] || null);
       } catch {
@@ -192,7 +196,11 @@ export function UploadedImageFill({ disasterType }) {
         );
         if (!res.ok) return;
         const data = await res.json();
-        if (!cancelled && data[0]) setUpload(data[0]);
+        // Only show local disaster data uploads (not research uploads)
+        const localOnly = data.filter((u) =>
+          u.title?.startsWith("Disaster Data:"),
+        );
+        if (!cancelled && localOnly[0]) setUpload(localOnly[0]);
       } catch {
         /* silent */
       }

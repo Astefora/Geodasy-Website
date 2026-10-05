@@ -331,6 +331,20 @@ body[data-theme="dark"] h2 {
 }
 
 /* ── Admin stat card icon box colors — must beat theme.css overrides ───────── */
+.admin-icon-indigo,
+.admin-icon-indigo[style],
+body[data-theme="light"] .admin-icon-indigo,
+body[data-theme="dark"] .admin-icon-indigo {
+  background-color: #6366f1 !important;
+}
+
+.admin-icon-purple,
+.admin-icon-purple[style],
+body[data-theme="light"] .admin-icon-purple,
+body[data-theme="dark"] .admin-icon-purple {
+  background-color: #a855f7 !important;
+}
+
 .admin-icon-amber,
 .admin-icon-amber[style],
 body[data-theme="light"] .admin-icon-amber,
@@ -360,11 +374,14 @@ body[data-theme="dark"] .admin-icon-cyan {
 }
 
 /* Icon inside the box is always white */
+.admin-icon-indigo svg,
+.admin-icon-purple svg,
 .admin-icon-amber svg,
 .admin-icon-emerald svg,
 .admin-icon-blue svg,
 .admin-icon-cyan svg {
   color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 /* Badge backgrounds stay as inline styles — protect them from blanket resets */
@@ -407,3 +424,260 @@ body[data-theme="light"] .geoportal-btn span,
 body[data-theme="light"] .geoportal-btn .geoportal-text {
   color: #ffffff !important;
 }
+
+/* ── Toast Notifications: 100% Solid background & crisp text ────────────── */
+.app-toast-container,
+div.app-toast-container {
+  opacity: 1 !important;
+  color: #ffffff !important;
+  z-index: 99999 !important;
+}
+
+body[data-theme="light"] .app-toast-container,
+body[data-theme="dark"] .app-toast-container,
+body[data-theme="light"] div.app-toast-container,
+body[data-theme="dark"] div.app-toast-container {
+  color: #ffffff !important;
+}
+
+body[data-theme="light"] .app-toast-container *,
+body[data-theme="dark"] .app-toast-container * {
+  color: #ffffff !important;
+}
+
+body[data-theme="light"] .app-toast-success,
+body[data-theme="dark"] .app-toast-success,
+body[data-theme="light"] div.app-toast-success,
+body[data-theme="dark"] div.app-toast-success {
+  background-color: #059669 !important;
+  background: #059669 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="light"] .app-toast-error,
+body[data-theme="dark"] .app-toast-error,
+body[data-theme="light"] div.app-toast-error,
+body[data-theme="dark"] div.app-toast-error {
+  background-color: #dc2626 !important;
+  background: #dc2626 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* ── Confirm Modal Action Buttons: Solid White Text ──────────────────────── */
+.confirm-modal-action-btn,
+button.confirm-modal-action-btn {
+  color: #ffffff !important;
+}
+
+body[data-theme="light"] .confirm-modal-action-btn,
+body[data-theme="dark"] .confirm-modal-action-btn,
+body[data-theme="light"] .confirm-modal-action-btn *,
+body[data-theme="dark"] .confirm-modal-action-btn * {
+  color: #ffffff !important;
+}
+
+/* ── Operational Modules Bar & Active Tab Icon Protection ─────────────────── */
+.op-module-card {
+  transition: all 0.15s ease-in-out;
+}
+
+body[data-theme="dark"] .op-module-card-inactive {
+  background-color: rgba(31, 41, 55, 0.75) !important;
+  border-color: rgba(55, 65, 81, 0.8) !important;
+}
+
+body[data-theme="light"] .op-module-card-inactive {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(229, 231, 235, 0.9) !important;
+}
+
+.op-module-icon-box {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Alert History */
+.op-icon-alert-history.op-icon-active,
+div.op-icon-alert-history.op-icon-active,
+body[data-theme="light"] div.op-icon-alert-history.op-icon-active,
+body[data-theme="dark"] div.op-icon-alert-history.op-icon-active {
+  background-color: #3b82f6 !important;
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+.op-icon-alert-history.op-icon-inactive,
+div.op-icon-alert-history.op-icon-inactive,
+body[data-theme="light"] div.op-icon-alert-history.op-icon-inactive,
+body[data-theme="dark"] div.op-icon-alert-history.op-icon-inactive {
+  background-color: rgba(59, 130, 246, 0.14) !important;
+  background: rgba(59, 130, 246, 0.14) !important;
+  color: #2563eb !important;
+}
+
+/* Dispatch Alert */
+.op-icon-dispatch.op-icon-active,
+div.op-icon-dispatch.op-icon-active,
+body[data-theme="light"] div.op-icon-dispatch.op-icon-active,
+body[data-theme="dark"] div.op-icon-dispatch.op-icon-active {
+  background-color: #ef4444 !important;
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+.op-icon-dispatch.op-icon-inactive,
+div.op-icon-dispatch.op-icon-inactive,
+body[data-theme="light"] div.op-icon-dispatch.op-icon-inactive,
+body[data-theme="dark"] div.op-icon-dispatch.op-icon-inactive {
+  background-color: rgba(239, 68, 68, 0.14) !important;
+  background: rgba(239, 68, 68, 0.14) !important;
+  color: #dc2626 !important;
+}
+
+/* Content Management */
+.op-icon-cms.op-icon-active,
+div.op-icon-cms.op-icon-active,
+body[data-theme="light"] div.op-icon-cms.op-icon-active,
+body[data-theme="dark"] div.op-icon-cms.op-icon-active {
+  background-color: #10b981 !important;
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+.op-icon-cms.op-icon-inactive,
+div.op-icon-cms.op-icon-inactive,
+body[data-theme="light"] div.op-icon-cms.op-icon-inactive,
+body[data-theme="dark"] div.op-icon-cms.op-icon-inactive {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+  background: rgba(16, 185, 129, 0.14) !important;
+  color: #059669 !important;
+}
+
+body[data-theme="light"] .op-icon-active,
+body[data-theme="dark"] .op-icon-active,
+body[data-theme="light"] .op-icon-active *,
+body[data-theme="dark"] .op-icon-active * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Dispatch Banner Icon Box */
+.op-dispatch-banner-icon-box,
+div.op-dispatch-banner-icon-box,
+body[data-theme="light"] div.op-dispatch-banner-icon-box,
+body[data-theme="dark"] div.op-dispatch-banner-icon-box {
+  background-color: #ef4444 !important;
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+.op-dispatch-banner-icon-box svg,
+div.op-dispatch-banner-icon-box svg,
+body[data-theme="light"] .op-dispatch-banner-icon-box *,
+body[data-theme="dark"] .op-dispatch-banner-icon-box * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* ── Dispatch Broadcast Action Button ────────────────────────────────────── */
+.dispatch-broadcast-btn,
+button.dispatch-broadcast-btn {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="light"] .dispatch-broadcast-btn,
+body[data-theme="dark"] .dispatch-broadcast-btn,
+body[data-theme="light"] .dispatch-broadcast-btn *,
+body[data-theme="dark"] .dispatch-broadcast-btn *,
+body[data-theme="light"] button.dispatch-broadcast-btn span,
+body[data-theme="dark"] button.dispatch-broadcast-btn span {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+body[data-theme="light"] .dispatch-broadcast-btn svg,
+body[data-theme="dark"] .dispatch-broadcast-btn svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* ── Admin Action Buttons: Approve, Reject, Remove, Request Changes ──────── */
+.admin-reject-btn,
+button.admin-reject-btn,
+.admin-approve-btn,
+button.admin-approve-btn,
+.admin-remove-btn,
+button.admin-remove-btn,
+.admin-changes-btn,
+button.admin-changes-btn {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+body[data-theme="light"] .admin-reject-btn,
+body[data-theme="dark"] .admin-reject-btn,
+body[data-theme="light"] .admin-reject-btn *,
+body[data-theme="dark"] .admin-reject-btn *,
+body[data-theme="light"] button.admin-reject-btn span,
+body[data-theme="dark"] button.admin-reject-btn span {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+body[data-theme="light"] .admin-reject-btn svg,
+body[data-theme="dark"] .admin-reject-btn svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+body[data-theme="light"] .admin-approve-btn,
+body[data-theme="dark"] .admin-approve-btn,
+body[data-theme="light"] .admin-approve-btn *,
+body[data-theme="dark"] .admin-approve-btn *,
+body[data-theme="light"] button.admin-approve-btn span,
+body[data-theme="dark"] button.admin-approve-btn span {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+body[data-theme="light"] .admin-approve-btn svg,
+body[data-theme="dark"] .admin-approve-btn svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+body[data-theme="light"] .admin-remove-btn,
+body[data-theme="dark"] .admin-remove-btn,
+body[data-theme="light"] .admin-remove-btn *,
+body[data-theme="dark"] .admin-remove-btn *,
+body[data-theme="light"] button.admin-remove-btn span,
+body[data-theme="dark"] button.admin-remove-btn span {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+body[data-theme="light"] .admin-remove-btn svg,
+body[data-theme="dark"] .admin-remove-btn svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+body[data-theme="light"] .admin-changes-btn,
+body[data-theme="dark"] .admin-changes-btn,
+body[data-theme="light"] .admin-changes-btn *,
+body[data-theme="dark"] .admin-changes-btn *,
+body[data-theme="light"] button.admin-changes-btn span,
+body[data-theme="dark"] button.admin-changes-btn span {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+body[data-theme="light"] .admin-changes-btn svg,
+body[data-theme="dark"] .admin-changes-btn svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+
+
+

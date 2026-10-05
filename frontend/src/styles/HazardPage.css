@@ -1,0 +1,1394 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   HazardPage.css — Shared layout & design system for all 6 hazard pages
+   Earthquake · Flood · Landslide · Drought · Fire · Volcano
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page root ──────────────────────────────────────────────────────────── */
+.hazard-page {
+  padding: 0 0 40px;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  background: transparent;
+  min-height: 100vh;
+  color: var(--text-primary);
+}
+
+/* ── Page header — full-bleed banner card, flush with navbar (no gap) ────── */
+.hazard-page-header-wrap {
+  padding: 24px 24px 0;
+  margin-bottom: 28px;
+}
+
+@media (min-width: 640px) {
+  .hazard-page-header-wrap {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hazard-page-header-wrap {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+.hazard-page-header-card {
+  position: relative;
+  border-radius: 16px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  padding: 20px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  /* overflow: visible so the region dropdown (position:fixed) is not clipped.
+     The glow blobs use position:absolute but their blur effect stays subtle enough
+     without overflow:hidden; they just extend slightly beyond the border. */
+  overflow: visible;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Clip the glow blobs only, not the card contents */
+.hazard-page-header-card::before,
+.hazard-page-header-card::after {
+  border-radius: 16px;
+}
+
+/* Ambient glow blobs */
+.hazard-page-header-card::before,
+.hazard-page-header-card::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(30px);
+  width: 220px;
+  height: 220px;
+}
+
+.hazard-page-header-card::before {
+  bottom: -50px;
+  left: -50px;
+  background: radial-gradient(
+    circle,
+    var(--hazard-glow, rgba(99, 102, 241, 0.09)) 0%,
+    transparent 70%
+  );
+}
+
+.hazard-page-header-card::after {
+  top: -50px;
+  right: -50px;
+  background: radial-gradient(
+    circle,
+    var(--hazard-glow, rgba(99, 102, 241, 0.06)) 0%,
+    transparent 70%
+  );
+}
+
+/* ── Content area (maps, analysis grid) — padded sides ──────────────────── */
+.hazard-page-content {
+  padding: 0 24px;
+}
+
+@media (min-width: 1024px) {
+  .hazard-page-content {
+    padding: 0 32px;
+  }
+}
+
+/* ── Page header ────────────────────────────────────────────────────────── */
+.hazard-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.hazard-page-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.hazard-page-header-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.hazard-page-header-text {
+  min-width: 0;
+}
+
+.hazard-page-header-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+  line-height: 1;
+}
+
+.hazard-page-header-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.hazard-page-header-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.hazard-page-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    color 0.2s;
+  white-space: nowrap;
+}
+
+.hazard-page-refresh-btn:hover {
+  border-color: var(--accent-brand, #1f4fd8);
+  color: var(--accent-brand, #1f4fd8);
+  background: rgba(31, 79, 216, 0.06);
+}
+
+.hazard-page-refresh-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .hazard-page-header-title {
+    font-size: 18px;
+  }
+  .hazard-page-header-subtitle {
+    display: none;
+  }
+  .hazard-page-refresh-btn span {
+    display: none;
+  }
+  .hazard-page-refresh-btn {
+    padding: 8px 10px;
+  }
+}
+
+/* ── Section spacing ────────────────────────────────────────────────────── */
+.hazard-section {
+  margin-bottom: 28px;
+}
+
+/* ── Two-map row: side-by-side on desktop, stacked on smaller screens ────── */
+/* Wrap both .hazard-section map cards inside a .hazard-maps-row div         */
+.hazard-maps-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 28px;
+  /* Stretch children to same height so both cards align top and bottom */
+  align-items: stretch;
+}
+
+/* On tablet / mobile collapse to single column */
+@media (max-width: 900px) {
+  .hazard-maps-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Sections inside the row need no bottom margin and must fill the row height */
+.hazard-maps-row .hazard-section {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Map card shell ─────────────────────────────────────────────────────── */
+.hazard-map-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.25s ease;
+  position: relative;
+  /* Make the card a flex column so the map container can fill remaining height */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.hazard-map-card:hover {
+  box-shadow: 0 8px 36px rgba(0, 0, 0, 0.13);
+}
+
+/* ── Map card header ────────────────────────────────────────────────────── */
+.hazard-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-card);
+}
+
+.hazard-map-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.hazard-map-indicator {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hazard-map-indicator.local {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.hazard-map-indicator.global {
+  background: var(--accent-brand, #1f4fd8);
+  box-shadow: 0 0 0 3px rgba(31, 79, 216, 0.2);
+}
+
+.hazard-map-title-group {
+  min-width: 0;
+}
+
+.hazard-map-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 1;
+  margin-bottom: 3px;
+}
+
+.hazard-map-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hazard-map-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Controls bar (below header, above map) ─────────────────────────────── */
+.hazard-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-card);
+}
+
+/* ── Upload / LocalDisasterData wrapper ─────────────────────────────────── */
+.hazard-local-meta {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-light);
+  min-height: 68px;
+  background: var(--bg-card);
+}
+
+/* ── Map container wrapper ──────────────────────────────────────────────── */
+.hazard-map-container {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  /* When inside a flex card, grow to fill remaining height so both maps
+     align — the fixed height acts as a minimum/default on standalone sections */
+  flex: 1;
+  min-height: 440px;
+}
+
+/* Override fixed height when inside the side-by-side row — let flex handle it */
+.hazard-maps-row .hazard-map-container {
+  height: auto;
+  flex: 1;
+}
+
+.hazard-map-container .leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0;
+}
+
+/* ── Map footer strip (status + source) ─────────────────────────────────── */
+.hazard-map-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-card);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── Legend row ─────────────────────────────────────────────────────────── */
+.hazard-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 8px 16px 6px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-card);
+}
+
+.hazard-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.hazard-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Analysis grid (below two maps) ────────────────────────────────────── */
+.hazard-analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+/* ── Individual analysis card ───────────────────────────────────────────── */
+.hazard-analysis-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  transition:
+    box-shadow 0.22s ease,
+    transform 0.22s ease,
+    border-color 0.22s ease;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hazard-analysis-card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  border-color: rgba(31, 79, 216, 0.22);
+}
+
+.hazard-analysis-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hazard-analysis-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.hazard-analysis-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.hazard-analysis-card-body {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  flex: 1;
+}
+
+/* ── Status text ────────────────────────────────────────────────────────── */
+.hazard-status-text {
+  font-size: 11px;
+  padding: 4px 16px 2px;
+  min-height: 20px;
+  color: var(--text-muted);
+  background: var(--bg-card);
+}
+
+.hazard-status-text.error {
+  color: #ef4444;
+}
+
+/* ── Map type toggle (overrides shared) ─────────────────────────────────── */
+.hazard-map-type-toggle {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  display: flex;
+  gap: 5px;
+  z-index: 1000;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hazard-page-header-wrap,
+  .hazard-page-content {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* On single-column, restore fixed heights */
+  .hazard-map-container {
+    height: 480px;
+    min-height: 400px;
+    flex: none;
+  }
+
+  .hazard-maps-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .hazard-analysis-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hazard-page {
+    padding: 0 0 24px;
+  }
+
+  .hazard-page-header-wrap {
+    padding: 14px 12px 0;
+    margin-bottom: 16px;
+  }
+
+  .hazard-page-content {
+    padding: 0 12px;
+  }
+
+  .hazard-page-header-card {
+    padding: 14px 14px;
+    border-radius: 14px;
+  }
+
+  .hazard-page-header {
+    gap: 12px;
+  }
+
+  .hazard-page-header-left {
+    gap: 10px;
+  }
+
+  .hazard-page-header-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 18px;
+  }
+
+  .hazard-page-header-icon img {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .hazard-page-header-label {
+    font-size: 9.5px;
+    margin-bottom: 2px;
+  }
+
+  .hazard-page-header-title {
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .hazard-map-container {
+    height: 400px;
+    min-height: 340px;
+  }
+
+  .hazard-map-header {
+    padding: 12px 14px 10px;
+  }
+
+  .hazard-map-title {
+    font-size: 13px;
+    white-space: normal;
+  }
+
+  .hazard-controls-bar {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .hazard-map-footer {
+    padding: 8px 12px;
+    font-size: 10px;
+    gap: 6px;
+  }
+
+  .hazard-legend {
+    padding: 6px 12px;
+    gap: 8px 10px;
+  }
+
+  .hazard-legend-item {
+    font-size: 10.5px;
+  }
+
+  .hazard-analysis-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .hazard-analysis-card {
+    padding: 14px 14px;
+    border-radius: 12px;
+    min-height: unset;
+  }
+
+  .hazard-map-badge {
+    display: none;
+  }
+}
+
+@media (max-width: 425px) {
+  .hazard-page-header-wrap {
+    padding: 10px 8px 0;
+    margin-bottom: 12px;
+  }
+
+  .hazard-page-content {
+    padding: 0 8px;
+  }
+
+  .hazard-page-header-card {
+    padding: 10px 10px;
+    border-radius: 12px;
+  }
+
+  .hazard-page-header-title {
+    font-size: 15px;
+  }
+
+  .hazard-page-header-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .hazard-page-header-icon img {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .hazard-map-container {
+    height: 330px;
+    min-height: 300px;
+  }
+
+  .hazard-map-header {
+    padding: 8px 10px;
+  }
+
+  .hazard-map-title {
+    font-size: 12px;
+  }
+
+  .hazard-map-label {
+    font-size: 9px;
+  }
+
+  .hazard-controls-bar {
+    padding: 6px 8px;
+    gap: 5px;
+  }
+
+  .hazard-map-footer {
+    padding: 6px 10px;
+    font-size: 9.5px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+
+  .hazard-legend {
+    padding: 5px 8px;
+    gap: 5px 8px;
+  }
+
+  .hazard-legend-item {
+    font-size: 9.5px;
+  }
+
+  .hazard-legend-dot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .region-risk-card {
+    top: 8px !important;
+    right: 8px !important;
+    width: 210px !important;
+    max-width: calc(100% - 16px) !important;
+  }
+
+  .hazard-map-type-toggle {
+    bottom: 8px;
+    right: 8px;
+  }
+
+  .map-type-btn {
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+}
+
+/* ── Light mode card glass ──────────────────────────────────────────────── */
+body[data-theme="light"] .hazard-map-card {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+body[data-theme="light"] .hazard-map-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+body[data-theme="light"] .hazard-analysis-card {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+body[data-theme="light"] .hazard-analysis-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
+}
+
+/* ── Dark mode refinements ──────────────────────────────────────────────── */
+body[data-theme="dark"] .hazard-map-card {
+  background: rgba(26, 26, 26, 0.95);
+}
+
+body[data-theme="dark"] .hazard-analysis-card {
+  background: rgba(26, 26, 26, 0.95);
+}
+
+/* ── Mobile (≤480px): header wraps — title full width, buttons on 2nd line ── */
+@media (max-width: 480px) {
+  .hazard-page-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .hazard-page-header-left {
+    width: 100%;
+    flex: none;
+  }
+
+  /* The controls div (region selector + refresh button) goes to 2nd line */
+  .hazard-page-header > div:last-child {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ── Zone/Station selector row — wrap label+select only on very small screens ── */
+.zone-selector-row {
+  flex-wrap: nowrap; /* single row on all screens by default */
+}
+
+@media (max-width: 425px) {
+  .zone-selector-row {
+    flex-wrap: wrap; /* label on line 1, select full-width on line 2 */
+  }
+  .zone-selector-row select {
+    width: 100%;
+    flex: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANALYSIS SECTION CARDS — below-map sections on all hazard pages
+   Uses .hazard-analysis-section wrapper + .hazard-map-card inside.
+   The map cards in the maps row keep their original styles unchanged.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Wrapper for each analysis section below the maps */
+.hazard-analysis-section {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+/* The card inside each analysis section — overrides hazard-map-card specifically here */
+.hazard-analysis-section .hazard-map-card {
+  border-radius: 20px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 6px 20px rgba(0, 0, 0, 0.07),
+    0 16px 48px rgba(0, 0, 0, 0.04);
+  transition:
+    box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.28s ease;
+  overflow: hidden;
+  height: auto;
+}
+
+.hazard-analysis-section .hazard-map-card:hover {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.06),
+    0 10px 32px rgba(0, 0, 0, 0.1),
+    0 24px 64px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.18);
+}
+
+/* Thin colored top stripe on each analysis card */
+.hazard-analysis-section .hazard-map-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 20px 20px 0 0;
+  background: linear-gradient(
+    90deg,
+    var(--hazard-section-color, #6366f1) 0%,
+    transparent 100%
+  );
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Header inside analysis cards — slightly more spacious */
+.hazard-analysis-section .hazard-map-header {
+  padding: 18px 22px 14px;
+  background: linear-gradient(
+    to bottom,
+    var(--bg-card-alt, rgba(99, 102, 241, 0.03)) 0%,
+    var(--bg-card) 100%
+  );
+}
+
+/* Section number label — premium uppercase style */
+.hazard-analysis-section .hazard-map-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hazard-section-color, var(--accent-blue));
+  opacity: 0.85;
+}
+
+/* Section title — slightly larger and bolder */
+.hazard-analysis-section .hazard-map-title {
+  font-size: 15.5px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+/* Badge inside analysis section headers */
+.hazard-analysis-section .hazard-map-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+/* Light mode refinements */
+body[data-theme="light"] .hazard-analysis-section .hazard-map-card {
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.03),
+    0 6px 18px rgba(0, 0, 0, 0.06),
+    0 14px 40px rgba(0, 0, 0, 0.04);
+}
+
+body[data-theme="light"] .hazard-analysis-section .hazard-map-card:hover {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.05),
+    0 10px 28px rgba(0, 0, 0, 0.09),
+    0 22px 56px rgba(0, 0, 0, 0.05);
+  border-color: rgba(99, 102, 241, 0.22);
+}
+
+/* Dark mode */
+body[data-theme="dark"] .hazard-analysis-section .hazard-map-card {
+  background: rgba(17, 17, 26, 0.97);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+body[data-theme="dark"] .hazard-analysis-section .hazard-map-card:hover {
+  border-color: rgba(99, 102, 241, 0.28);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREMIUM ANALYSIS SECTION INTERNALS
+   Targets only elements inside .hazard-analysis-section
+   Never touches the map card, map header, or page header
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Stat pill container ─────────────────────────────────────────────────── */
+.hazard-analysis-section .stat-pills-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 20px 4px;
+}
+
+/* Individual stat pill */
+.hazard-analysis-section .stat-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 14px 9px;
+  border-radius: 10px;
+  border: 1px solid;
+  min-width: 120px;
+  backdrop-filter: blur(4px);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.hazard-analysis-section .stat-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+.hazard-analysis-section .stat-pill-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+.hazard-analysis-section .stat-pill-value {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+/* ── Metric stat cards grid ──────────────────────────────────────────────── */
+.hazard-analysis-section .metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.hazard-analysis-section .metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+.hazard-analysis-section .metric-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
+  transform: translateY(-2px);
+}
+/* Accent left bar */
+.hazard-analysis-section .metric-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--metric-accent, #6366f1);
+  opacity: 0.7;
+}
+.hazard-analysis-section .metric-card-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.hazard-analysis-section .metric-card-value {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.hazard-analysis-section .metric-card-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+/* Light/dark metric card backgrounds */
+body[data-theme="light"] .hazard-analysis-section .metric-card {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.05),
+    0 4px 12px rgba(0, 0, 0, 0.04);
+}
+body[data-theme="dark"] .hazard-analysis-section .metric-card {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Risk / Scorecard cards ───────────────────────────────────────────────── */
+.hazard-analysis-section .scorecard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  padding: 12px 20px 18px;
+}
+
+.hazard-analysis-section .scorecard {
+  border-radius: 14px;
+  padding: 14px 16px;
+  border: 1px solid;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.hazard-analysis-section .scorecard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.hazard-analysis-section .scorecard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+.hazard-analysis-section .scorecard-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.hazard-analysis-section .scorecard-tier {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Progress bar */
+.hazard-analysis-section .scorecard-bar {
+  height: 5px;
+  background: rgba(128, 128, 128, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.hazard-analysis-section .scorecard-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mini 3-col stats inside scorecard */
+.hazard-analysis-section .scorecard-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.hazard-analysis-section .scorecard-stat-cell {
+  border-radius: 6px;
+  padding: 5px 3px;
+  background: rgba(128, 128, 128, 0.06);
+}
+.hazard-analysis-section .scorecard-stat-cell strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 1px;
+}
+
+/* Scorecard footer */
+.hazard-analysis-section .scorecard-footer {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ── Simulator / result box ──────────────────────────────────────────────── */
+.hazard-analysis-section .sim-result {
+  border-radius: 14px;
+  padding: 18px;
+  border: 1px solid;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hazard-analysis-section .sim-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hazard-analysis-section .sim-result-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.hazard-analysis-section .sim-result-badge {
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid;
+}
+.hazard-analysis-section .sim-result-score {
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin: 6px 0 4px;
+}
+.hazard-analysis-section .sim-result-score-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.hazard-analysis-section .sim-result-advisory {
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(128, 128, 128, 0.08);
+  border: 1px solid var(--border-light);
+}
+.hazard-analysis-section .sim-result-formula {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+  font-family: monospace;
+  letter-spacing: 0.02em;
+}
+
+/* ── Data tables ─────────────────────────────────────────────────────────── */
+.hazard-analysis-section .data-table-wrap {
+  overflow-x: auto;
+  margin: 0 0 4px;
+}
+.hazard-analysis-section .data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+.hazard-analysis-section .data-table thead tr {
+  background: var(--bg-card-alt, rgba(99, 102, 241, 0.04));
+}
+.hazard-analysis-section .data-table th {
+  padding: 10px 14px;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border-light);
+  white-space: nowrap;
+}
+.hazard-analysis-section .data-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+.hazard-analysis-section .data-table tbody tr {
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+.hazard-analysis-section .data-table tbody tr:hover {
+  background: rgba(99, 102, 241, 0.05) !important;
+}
+.hazard-analysis-section .data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Status / IPC badge inside table */
+.hazard-analysis-section .table-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+/* ── Chart containers ────────────────────────────────────────────────────── */
+.hazard-analysis-section .chart-wrap {
+  padding: 14px 20px 12px;
+  position: relative;
+}
+.hazard-analysis-section .chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 13px;
+  gap: 10px;
+}
+
+/* ── Controls panel (slider/select groups) ──────────────────────────────── */
+.hazard-analysis-section .controls-panel {
+  background: var(--bg-card-alt, rgba(0, 0, 0, 0.02));
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  padding: 18px;
+}
+.hazard-analysis-section .controls-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hazard-analysis-section .slider-row {
+  margin-bottom: 16px;
+}
+.hazard-analysis-section .slider-row:last-child {
+  margin-bottom: 0;
+}
+.hazard-analysis-section .slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+.hazard-analysis-section .slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* ── Tectonic / geology info pills ──────────────────────────────────────── */
+.hazard-analysis-section .geo-pill {
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid;
+}
+.hazard-analysis-section .geo-pill-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.hazard-analysis-section .geo-pill-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ── Section body padding ────────────────────────────────────────────────── */
+.hazard-analysis-section .section-body {
+  padding: 20px;
+}
+.hazard-analysis-section .section-body-sm {
+  padding: 14px 20px;
+}
+
+/* ── Prose notes (methodology descriptions) ─────────────────────────────── */
+.hazard-analysis-section .section-note {
+  padding: 10px 22px 6px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.65;
+  border-bottom: 1px solid var(--border-light);
+  background: linear-gradient(
+    to bottom,
+    var(--bg-card-alt, rgba(99, 102, 241, 0.02)),
+    transparent
+  );
+}
+
+/* ── Tab toggle group (in card header) ──────────────────────────────────── */
+.hazard-analysis-section .tab-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-card-alt, rgba(0, 0, 0, 0.04));
+}
+.hazard-analysis-section .tab-btn {
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: transparent;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.hazard-analysis-section .tab-btn.active {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent-blue, #6366f1);
+}
+
+/* ── 2-column sub-metrics inside simulator ──────────────────────────────── */
+.hazard-analysis-section .sim-sub-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+.hazard-analysis-section .sim-sub-cell {
+  background: rgba(128, 128, 128, 0.08);
+  border: 1px solid var(--border-light);
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+.hazard-analysis-section .sim-sub-cell-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.hazard-analysis-section .sim-sub-cell-value {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .hazard-analysis-section .scorecard-grid {
+    grid-template-columns: 1fr;
+    padding: 10px 14px 14px;
+  }
+  .hazard-analysis-section .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .hazard-analysis-section .stat-pills-row {
+    padding: 10px 14px 4px;
+    gap: 8px;
+  }
+  .hazard-analysis-section .stat-pill {
+    min-width: unset;
+    flex: 1 1 calc(50% - 8px);
+  }
+  .hazard-analysis-section .sim-sub-grid {
+    grid-template-columns: 1fr;
+  }
+  .hazard-analysis-section .tab-toggle {
+    flex-wrap: wrap;
+  }
+  .hazard-analysis-section .section-body,
+  .hazard-analysis-section .section-body-sm {
+    padding: 14px;
+  }
+  .hazard-analysis-section .scorecard-stats {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .hazard-analysis-section .sim-result-score {
+    font-size: 30px;
+  }
+  .hazard-analysis-section .data-table th,
+  .hazard-analysis-section .data-table td {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 425px) {
+  .hazard-analysis-section .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  .hazard-analysis-section .stat-pill {
+    flex: 1 1 100%;
+  }
+}

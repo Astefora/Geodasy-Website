@@ -4,7 +4,6 @@ import Header from "./Componenet/Header";
 import Footer from "./Componenet/Footer";
 import TopographicBackground from "./Componenet/TopographicBackground";
 import Home from "./Pages/Home";
-import Hazards from "./Pages/Hazards";
 import { useTheme } from "./ThemeContext";
 
 // Hazard pages
@@ -13,7 +12,7 @@ import Flood from "./Pages/Flood";
 import Drought from "./Pages/Drought";
 import Volcano from "./Pages/Volcano";
 import Fire from "./Pages/Fire";
-import Earthquake from "./Pages/Earthquake ";
+import Earthquake from "./Pages/Earthquake";
 
 // Other pages
 import Research from "./Pages/Research";
@@ -189,7 +188,6 @@ function App() {
       <PageShell>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/hazards" element={<Hazards />} />
           <Route path="/hazards/landslide" element={<Landslide />} />
           <Route path="/hazards/flood" element={<Flood />} />
           <Route path="/hazards/drought" element={<Drought />} />

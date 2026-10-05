@@ -107,56 +107,60 @@ function EthiopiaMask({ paneNames = [] }) {
   // Leaflet already has an SVG overlay element; we create our own lightweight
   // SVG that sits at 0,0 with pointer-events:none so it never blocks clicks.
   function ensureSvg() {
-    if (svgRef.current) return;
+    if (svgRef.current || !map) return;
+    try {
+      const container = map.getContainer ? map.getContainer() : null;
+      if (!container || !container.appendChild) return;
 
-    const mapSize = map.getSize();
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    svg.style.cssText =
-      "position:absolute;top:0;left:0;width:100%;height:100%;" +
-      "pointer-events:none;overflow:visible;z-index:0;";
-    svg.setAttribute("width", mapSize.x);
-    svg.setAttribute("height", mapSize.y);
+      const mapSize = map.getSize ? map.getSize() : { x: 0, y: 0 };
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      svg.style.cssText =
+        "position:absolute;top:0;left:0;width:100%;height:100%;" +
+        "pointer-events:none;overflow:visible;z-index:0;";
+      svg.setAttribute("width", mapSize.x || "100%");
+      svg.setAttribute("height", mapSize.y || "100%");
 
-    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-    const clipEl = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "clipPath",
-    );
-    clipEl.setAttribute("id", clipIdRef.current);
-    // clipPathUnits="userSpaceOnUse" means coordinates are in pixel space —
-    // exactly what latLngToLayerPoint gives us.
-    clipEl.setAttribute("clipPathUnits", "userSpaceOnUse");
+      const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+      const clipEl = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "clipPath",
+      );
+      clipEl.setAttribute("id", clipIdRef.current);
+      clipEl.setAttribute("clipPathUnits", "userSpaceOnUse");
 
-    const pathEl = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "path",
-    );
-    clipEl.appendChild(pathEl);
-    defs.appendChild(clipEl);
-    svg.appendChild(defs);
+      const pathEl = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path",
+      );
+      clipEl.appendChild(pathEl);
+      defs.appendChild(clipEl);
+      svg.appendChild(defs);
 
-    // Append to the map's container div (not a pane — just the root div)
-    map.getContainer().appendChild(svg);
+      container.appendChild(svg);
 
-    svgRef.current = svg;
-    pathRef.current = pathEl;
+      svgRef.current = svg;
+      pathRef.current = pathEl;
+    } catch (err) {}
   }
 
   // ── Recompute the SVG path and apply clip-path to panes ─────────────────
   function updateClip() {
-    if (!featureRef.current || !pathRef.current) return;
+    if (!featureRef.current || !pathRef.current || !map) return;
+    try {
+      if (!map._loaded || !map.getPanes || !map.getPanes()?.mapPane) return;
 
-    // Reproject Ethiopia coordinates to current pixel space
-    const d = geomToSvgPath(featureRef.current.geometry, map);
-    pathRef.current.setAttribute("d", d);
+      // Reproject Ethiopia coordinates to current pixel space
+      const d = geomToSvgPath(featureRef.current.geometry, map);
+      pathRef.current.setAttribute("d", d);
 
-    // Apply clip-path CSS to every named overlay pane
-    const clipVal = `url(#${clipIdRef.current})`;
-    paneNames.forEach((name) => {
-      const paneEl = map.getPane(name);
-      if (paneEl) paneEl.style.clipPath = clipVal;
-    });
+      // Apply clip-path CSS to every named overlay pane
+      const clipVal = `url(#${clipIdRef.current})`;
+      paneNames.forEach((name) => {
+        const paneEl = map.getPane ? map.getPane(name) : null;
+        if (paneEl) paneEl.style.clipPath = clipVal;
+      });
+    } catch (err) {}
   }
 
   // ── Main effect: fetch GeoJSON, set up SVG, bind map events ─────────────

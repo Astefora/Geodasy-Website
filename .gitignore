@@ -10,19 +10,37 @@
 # testing
 /coverage
 
-# production
+# production build (generated, not needed in source control)
 /frontend/build
 
-# runtime
+# runtime uploads (user-generated content)
 /backend/uploads
 
-# misc
-.DS_Store
+# environment files — contain secrets, never commit these
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
+frontend/.env
 
+# misc OS files
+.DS_Store
+Thumbs.db
+
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# graphify analysis output (generated tool output, not source)
+/graphify-out/
+
+# temp/utility scripts not part of the project
+/install.ps1
+/frontend/fix_icons_block.py
+
+# raw data files (large, not source code)
+/floodscan_raw.xlsx
+/test_floodscan.xlsx
