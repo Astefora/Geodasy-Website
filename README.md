@@ -34,14 +34,33 @@ The platform integrates live satellite and sensor data from multiple internation
 
 ## External Data Sources
 
+### Hazard Monitoring Pages
+
 | Source               | Used For                                       |
 | -------------------- | ---------------------------------------------- |
 | USGS Earthquake API  | Live seismic events in Ethiopia                |
 | NASA FIRMS (VIIRS)   | Active fire hotspot detection                  |
 | NASA GIBS MODIS      | Land surface temperature tiles (drought page)  |
-| GloFAS               | River discharge flood risk (Awash River)       |
+| GloFAS / Open-Meteo  | River discharge flood risk (Awash River)       |
 | COMET Volcano Portal | InSAR deformation data for Ethiopian volcanoes |
 | FloodScan            | Historical flood extent statistics by region   |
+
+### Early Warning System
+
+| Source                         | Used For                                                              |
+| ------------------------------ | --------------------------------------------------------------------- |
+| USGS Earthquake API            | Real-time seismic event feed for alert generation and map markers     |
+| NASA FIRMS VIIRS NRT           | Near-real-time wildfire hotspots (requires `REACT_APP_FIRMS_MAP_KEY`) |
+| Open-Meteo Flood API           | River discharge from multiple Ethiopian gauge stations                |
+| COMET Volcano Portal           | Live volcano deformation data for alert risk scoring                  |
+| OpenStreetMap / Esri / TopoMap | Base map tile layers (Standard / Satellite / Terrain)                 |
+
+### Navbar Warning Badge
+
+| Source               | Used For                                              |
+| -------------------- | ----------------------------------------------------- |
+| USGS Earthquake API  | Live earthquake count for the Early Warning nav badge |
+| Open-Meteo Flood API | Awash River discharge level for flood threshold check |
 
 ---
 
@@ -113,7 +132,11 @@ ADMIN_PASSWORD=your_admin_password
 
 ```env
 REACT_APP_API_BASE=http://localhost:5002
+REACT_APP_FIRMS_MAP_KEY=your_nasa_firms_map_key_here
 ```
+
+> Get a free NASA FIRMS Map Key at https://firms.modaps.eosdis.nasa.gov/api/map_key/
+> Without this key the fire layer on the Early Warning map will fall back to cached/static data.
 
 > **Important:** Never commit `.env` files. They are listed in `.gitignore`.
 
